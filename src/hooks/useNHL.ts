@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { nhlApi, type Game, type StandingsTeam, type DaySchedule } from '../api/nhl'
+import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse } from '../api/nhl'
 
 const REFRESH_INTERVAL = 30
 
@@ -115,6 +115,81 @@ export function useStandings() {
   }, [fetch])
 
   return { standings, loading, error }
+}
+
+export function useBoxscore(gameId: number | null) {
+  const [boxscore, setBoxscore] = useState<BoxscoreResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (gameId === null) return
+    try {
+      const data = await nhlApi.boxscore(gameId)
+      setBoxscore(data)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load boxscore')
+    } finally {
+      setLoading(false)
+    }
+  }, [gameId])
+
+  useEffect(() => {
+    if (gameId === null) {
+      setBoxscore(null)
+      setError(null)
+      return
+    }
+    setLoading(true)
+    void fetchData()
+  }, [gameId, fetchData])
+
+  useEffect(() => {
+    if (gameId === null) return
+    if (!boxscore) return
+    const isLive = boxscore.gameState === 'LIVE' || boxscore.gameState === 'CRIT'
+    if (!isLive) return
+    const id = setInterval(() => { void fetchData() }, 30_000)
+    return () => clearInterval(id)
+  }, [gameId, boxscore, fetchData])
+
+  return { boxscore, loading, error }
+}
+
+export function useLanding(gameId: number | null) {
+  const [landing, setLanding] = useState<LandingResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (gameId === null) return
+    try {
+      const data = await nhlApi.landing(gameId)
+      setLanding(data)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load game data')
+    } finally {
+      setLoading(false)
+    }
+  }, [gameId])
+
+  useEffect(() => {
+    if (gameId === null) { setLanding(null); return }
+    setLoading(true)
+    void fetchData()
+  }, [gameId, fetchData])
+
+  useEffect(() => {
+    if (gameId === null || !landing) return
+    const isLive = landing.gameState === 'LIVE' || landing.gameState === 'CRIT'
+    if (!isLive) return
+    const id = setInterval(() => { void fetchData() }, 30_000)
+    return () => clearInterval(id)
+  }, [gameId, landing, fetchData])
+
+  return { landing, loading, error }
 }
 
 export type { Game, StandingsTeam, DaySchedule }

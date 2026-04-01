@@ -3,6 +3,7 @@ import styles from './GameCard.module.css'
 
 interface Props {
   game: Game
+  onClick?: () => void
 }
 
 function formatTime(utc: string): string {
@@ -44,14 +45,17 @@ function statusBadge(game: Game): { label: string; live: boolean; final: boolean
   return { label: s, live: false, final: false }
 }
 
-export default function GameCard({ game }: Props) {
+export default function GameCard({ game, onClick }: Props) {
   const status = statusBadge(game)
   const awayWon = status.final && (game.awayTeam.score ?? 0) > (game.homeTeam.score ?? 0)
   const homeWon = status.final && (game.homeTeam.score ?? 0) > (game.awayTeam.score ?? 0)
   const hasScore = true
 
   return (
-    <div className={`${styles.card} ${status.live ? styles.live : ''}`}>
+    <div
+      className={`${styles.card} ${status.live ? styles.live : ''} ${onClick ? styles.clickable : ''}`}
+      onClick={onClick}
+    >
       {status.live && <div className={styles.livePulse} />}
 
       <div className={styles.status}>

@@ -146,6 +146,65 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+export interface BoxscoreSkater {
+  playerId: number
+  sweaterNumber: number
+  name: { default: string }
+  position: string
+  goals: number
+  assists: number
+  points: number
+  plusMinus: number
+  pim: number
+  hits: number
+  powerPlayGoals: number
+  sog: number
+  faceoffWinningPctg: number
+  toi: string
+  blockedShots: number
+  shifts: number
+  giveaways: number
+  takeaways: number
+}
+
+export interface BoxscoreGoalie {
+  playerId: number
+  sweaterNumber: number
+  name: { default: string }
+  position: string
+  saveShotsAgainst: string
+  savePctg: number
+  goalsAgainst: number
+  shotsAgainst: number
+  saves: number
+  toi: string
+  evenStrengthShotsAgainst: string
+  powerPlayShotsAgainst: string
+  shorthandedShotsAgainst: string
+}
+
+export interface BoxscoreTeamStats {
+  id: number
+  abbrev: string
+  commonName: { default: string }
+  score: number
+  sog: number
+  logo: string
+}
+
+export interface BoxscoreResponse {
+  id: number
+  gameState: string
+  awayTeam: BoxscoreTeamStats
+  homeTeam: BoxscoreTeamStats
+  clock: { timeRemaining: string; running: boolean; inIntermission: boolean }
+  periodDescriptor: { number: number; periodType: string }
+  playerByGameStats: {
+    awayTeam: { forwards: BoxscoreSkater[]; defense: BoxscoreSkater[]; goalies: BoxscoreGoalie[] }
+    homeTeam: { forwards: BoxscoreSkater[]; defense: BoxscoreSkater[]; goalies: BoxscoreGoalie[] }
+  }
+}
+
 export const nhlApi = {
   scoreboard: (date?: string) =>
     get<ScoreboardResponse>(`/score/${date ?? today()}`),
@@ -155,4 +214,37 @@ export const nhlApi = {
   scheduleByDate: (date: string) => get<ScheduleResponse>(`/schedule/${date}`),
 
   standings: () => get<StandingsResponse>(`/standings/${today()}`),
+
+  boxscore: (gameId: number) =>
+    get<BoxscoreResponse>(`/gamecenter/${gameId}/boxscore`),
+
+  landing: (gameId: number) =>
+    get<LandingResponse>(`/gamecenter/${gameId}/landing`),
+}
+
+export interface LandingPenalty {
+  timeInPeriod: string
+  type: string
+  duration: number
+  descKey: string
+  committedByPlayer?: { firstName: { default: string }; lastName: { default: string }; sweaterNumber: number }
+  drawnBy?: { firstName: { default: string }; lastName: { default: string }; sweaterNumber: number }
+  teamAbbrev: { default: string }
+}
+
+export interface LandingPenaltyPeriod {
+  periodDescriptor: { number: number; periodType: string }
+  penalties: LandingPenalty[]
+}
+
+export interface LandingResponse {
+  gameState: string
+  situation?: {
+    awayTeam: { abbrev: string; strength: number; situationDescriptions?: string[] }
+    homeTeam: { abbrev: string; strength: number; situationDescriptions?: string[] }
+    timeRemaining: string
+  }
+  summary: {
+    penalties: LandingPenaltyPeriod[]
+  }
 }

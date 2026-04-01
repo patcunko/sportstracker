@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useScoreboard } from '../hooks/useNHL'
 import GameCard from '../components/GameCard'
+import GameModal from '../components/GameModal'
 import styles from './Scores.module.css'
 
 function localDateStr(d: Date = new Date()): string {
@@ -25,6 +26,7 @@ function dateOffset(days: number): string {
 
 export default function Scores() {
   const [dateInput, setDateInput] = useState<string | undefined>(undefined)
+  const [selectedGameId, setSelectedGameId] = useState<number | null>(null)
   const { days, loading, error, lastUpdated, countdown, refetch } = useScoreboard(dateInput)
 
   const hasLive = days.some(d => d.games.some(g => g.gameState === 'LIVE' || g.gameState === 'CRIT'))
@@ -95,11 +97,14 @@ export default function Scores() {
           <h2 className={styles.dayHeading}>{formatDate(day.date)}</h2>
           <div className={styles.grid}>
             {day.games.map(game => (
-              <GameCard key={game.id} game={game} />
+              <GameCard key={game.id} game={game} onClick={() => setSelectedGameId(game.id)} />
             ))}
           </div>
         </section>
       ))}
+      {selectedGameId !== null && (
+        <GameModal gameId={selectedGameId} onClose={() => setSelectedGameId(null)} />
+      )}
     </div>
   )
 }
