@@ -1,15 +1,13 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+export const config = { runtime: 'edge' }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const path = (req.query.path as string[])?.join('/') ?? ''
-  const qs = new URLSearchParams(req.query as Record<string, string>)
-  qs.delete('path')
-  const search = qs.toString() ? `?${qs.toString()}` : ''
-  const upstream = await fetch(`https://api.nhle.com/${path}${search}`, {
+export default async function handler(request: Request): Promise<Response> {
+  const url = new URL(request.url)
+  const path = url.pathname.replace(/^\/api\/hockey-rest\//, '')
+  const upstream = await fetch(`https://api.nhle.com/${path}${url.search}`, {
     headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
   })
-  const data = await upstream.text()
-  res.status(upstream.status)
-    .setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/json')
-    .send(data)
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' },
+  })
 }
