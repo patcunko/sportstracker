@@ -220,23 +220,27 @@ function parseStandings(res: StatsResponse): NBAStandingsTeam[] {
   const rs = findRS(res, 'Standings')
   if (!rs) return []
   return toObjects(rs).map(row => {
-    const teamId = row['TeamID'] as number
+    const teamId = Number(row['TeamID'])
+    const wins = Number(row['WINS']) || 0
+    const losses = Number(row['L']) || 0
+    const pctRaw = row['PCT']
+    const pct = pctRaw != null ? Number(pctRaw) : (wins + losses > 0 ? wins / (wins + losses) : 0)
     return {
       teamId,
-      teamCity: row['TeamCity'] as string,
-      teamName: row['TeamName'] as string,
+      teamCity: (row['TeamCity'] as string) ?? '',
+      teamName: (row['TeamName'] as string) ?? '',
       teamAbbrev: TEAM_ABBREVS[teamId] ?? '',
-      conference: row['Conference'] as string,
-      division: row['Division'] as string,
-      wins: row['WINS'] as number,
-      losses: row['L'] as number,
-      pct: row['PCT'] as number,
-      conferenceRank: row['PlayoffRank'] as number,
-      divisionRank: row['DivisionRank'] as number,
-      homeRecord: row['HomeRecord'] as string,
-      roadRecord: row['RoadRecord'] as string,
-      l10: row['L10'] as string,
-      streak: row['strCurrentStreak'] as string,
+      conference: (row['Conference'] as string) ?? '',
+      division: (row['Division'] as string) ?? '',
+      wins,
+      losses,
+      pct,
+      conferenceRank: Number(row['PlayoffRank']) || 0,
+      divisionRank: Number(row['DivisionRank']) || 0,
+      homeRecord: (row['HomeRecord'] as string) ?? '',
+      roadRecord: (row['RoadRecord'] as string) ?? '',
+      l10: (row['L10'] as string) ?? '',
+      streak: (row['strCurrentStreak'] as string) ?? '',
       logo: teamLogo(teamId),
     }
   })

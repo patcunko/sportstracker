@@ -233,3 +233,20 @@
   background: rgba(14, 165, 233, 0.2);
   border: 1px solid var(--accent);
 }
+
+.table tr.playInSpot td {
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.table tr.playInLine td {
+  border-top: 2px dashed rgba(245, 158, 11, 0.5);
+}
+
+.playInDot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+}
