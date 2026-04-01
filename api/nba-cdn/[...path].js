@@ -1,6 +1,6 @@
 export const config = { runtime: 'edge' }
 
-export default async function handler(request: Request): Promise<Response> {
+export default async function handler(request) {
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api\/nba-cdn\//, '')
   const upstream = await fetch(`https://cdn.nba.com/${path}${url.search}`, {

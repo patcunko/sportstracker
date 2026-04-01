@@ -1,6 +1,6 @@
 export const config = { runtime: 'edge' }
 
-export default async function handler(request: Request): Promise<Response> {
+export default async function handler(request) {
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api\/hockey-rest\//, '')
   const upstream = await fetch(`https://api.nhle.com/${path}${url.search}`, {
