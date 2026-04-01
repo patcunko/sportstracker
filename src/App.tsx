@@ -49,8 +49,8 @@ export default function App() {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}>
-            <span className={styles.brandIcon}>🏆</span>
-            <span className={styles.brandName}>SportsTracker</span>
+            <span className={styles.brandIcon}>📡</span>
+            <span className={styles.brandName}>ScoreSync</span>
           </div>
 
           <div className={styles.sportPicker}>
