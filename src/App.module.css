@@ -1,0 +1,91 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.headerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brandIcon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.brandName {
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  display: block;
+  line-height: 1.1;
+}
+
+.sport {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: block;
+}
+
+.nav {
+  display: flex;
+  gap: 2px;
+}
+
+.navBtn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.navBtn:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.navBtn.active {
+  color: var(--text);
+  background: var(--surface3);
+  font-weight: 600;
+}
+
+.main {
+  flex: 1;
+}
+
+.footer {
+  padding: 20px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}

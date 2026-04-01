@@ -1,0 +1,154 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-glow);
+}
+
+.card.live {
+  border-color: var(--live);
+  box-shadow: 0 0 16px var(--live-glow);
+}
+
+.livePulse {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top, var(--live-glow), transparent 70%);
+  pointer-events: none;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--live);
+  flex-shrink: 0;
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.liveText { color: var(--live); }
+.finalText { color: var(--text-muted); }
+.timeText { color: var(--text-muted); }
+
+.matchup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vs {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.team.winner {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.abbrev {
+  flex: 1;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+
+.score {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+}
+
+.winner .score {
+  color: var(--win);
+}
+
+.sog {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sogLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.venue {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
