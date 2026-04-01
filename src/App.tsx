@@ -3,6 +3,9 @@ import Scores from './views/Scores'
 import Schedule from './views/Schedule'
 import Standings from './views/Standings'
 import News from './views/News'
+import NBAScores from './views/NBAScores'
+import NBASchedule from './views/NBASchedule'
+import NBAStandings from './views/NBAStandings'
 import styles from './App.module.css'
 
 type Sport = 'nhl' | 'nba' | 'mlb' | 'nfl'
@@ -77,14 +80,23 @@ export default function App() {
       </header>
 
       <main className={styles.main}>
-        {sport === 'nhl' ? (
+        {sport === 'nhl' && (
           <>
             {tab === 'scores' && <Scores />}
             {tab === 'schedule' && <Schedule />}
             {tab === 'standings' && <Standings />}
-            {tab === 'news' && <News />}
+            {tab === 'news' && <News sport="nhl" />}
           </>
-        ) : (
+        )}
+        {sport === 'nba' && (
+          <>
+            {tab === 'scores' && <NBAScores />}
+            {tab === 'schedule' && <NBASchedule />}
+            {tab === 'standings' && <NBAStandings />}
+            {tab === 'news' && <News sport="nba" />}
+          </>
+        )}
+        {sport !== 'nhl' && sport !== 'nba' && (
           <ComingSoon sport={sport} />
         )}
       </main>

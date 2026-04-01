@@ -30,17 +30,27 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(h / 24)}d ago`
 }
 
-export default function News() {
+const RSS_PATHS: Record<string, string> = {
+  nhl: '/espn-rss/espn/rss/nhl/news',
+  nba: '/espn-rss/espn/rss/nba/news',
+  mlb: '/espn-rss/espn/rss/mlb/news',
+  nfl: '/espn-rss/espn/rss/nfl/news',
+}
+
+export default function News({ sport = 'nhl' }: { sport?: string }) {
   const [items, setItems] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/espn-rss/espn/rss/nhl/news', { cache: 'no-store' })
+    setLoading(true)
+    setItems([])
+    setError(null)
+    fetch(RSS_PATHS[sport] ?? RSS_PATHS['nhl'], { cache: 'no-store' })
       .then(r => r.text())
       .then(xml => { setItems(parseRSS(xml)); setLoading(false) })
       .catch(() => { setError('Failed to load news'); setLoading(false) })
-  }, [])
+  }, [sport])
 
   if (loading) {
     return (
@@ -57,7 +67,7 @@ export default function News() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.source}>Via ESPN NHL News</div>
+      <div className={styles.source}>Via ESPN {sport.toUpperCase()} News</div>
       <div className={styles.feed}>
         {items.map((item, i) => (
           <a
