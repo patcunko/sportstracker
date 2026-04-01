@@ -32,6 +32,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/nba-cdn/, ''),
       },
+      '/hockey-rest': {
+        target: 'https://api.nhle.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/hockey-rest/, ''),
+      },
     },
   },
 })

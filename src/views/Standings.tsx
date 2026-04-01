@@ -115,7 +115,6 @@ export default function Standings() {
 
   const allSorted = [...standings].sort((a, b) => b.points - a.points || b.wins - a.wins)
 
-  // Wildcard: top 3 per division qualify; remaining teams in conference compete for 2 wildcard spots
   const wildcardConf = (divs: string[]) => {
     const divLeaders = new Set(
       divs.flatMap(div => byDiv(div).slice(0, 3).map(t => t.teamAbbrev.default))

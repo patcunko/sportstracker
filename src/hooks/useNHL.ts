@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse } from '../api/nhl'
+import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse, type NHLLeadersResponse, type NHLRookiePlayer } from '../api/nhl'
 
 const REFRESH_INTERVAL = 30
 
@@ -190,6 +190,41 @@ export function useLanding(gameId: number | null) {
   }, [gameId, landing, fetchData])
 
   return { landing, loading, error }
+}
+
+export function useNHLLeaders() {
+  const [skaterLeaders, setSkaterLeaders] = useState<NHLLeadersResponse | null>(null)
+  const [goalieLeaders, setGoalieLeaders] = useState<NHLLeadersResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const [rookieLeaders, setRookieLeaders] = useState<NHLRookiePlayer[] | null>(null) // eslint-disable-line @typescript-eslint/no-unused-vars
+
+  const fetch = useCallback(async () => {
+    try {
+      const [skaters, goalies, rookies] = await Promise.all([
+        nhlApi.skaterLeaders(),
+        nhlApi.goalieLeaders(),
+        nhlApi.rookieLeaders(),
+      ])
+      setSkaterLeaders(skaters)
+      setGoalieLeaders(goalies)
+      setRookieLeaders(rookies.data)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load leaders')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void fetch() }, [fetch])
+  useEffect(() => {
+    const id = setInterval(() => { void fetch() }, 5 * 60_000)
+    return () => clearInterval(id)
+  }, [fetch])
+
+  return { skaterLeaders, goalieLeaders, rookieLeaders, loading, error }
 }
 
 export type { Game, StandingsTeam, DaySchedule }

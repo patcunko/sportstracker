@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Scores from './views/Scores'
 import Schedule from './views/Schedule'
 import Standings from './views/Standings'
+import NHLLeaders from './views/NHLLeaders'
 import News from './views/News'
 import NBAScores from './views/NBAScores'
 import NBASchedule from './views/NBASchedule'
@@ -9,7 +10,7 @@ import NBAStandings from './views/NBAStandings'
 import styles from './App.module.css'
 
 type Sport = 'nhl' | 'nba' | 'mlb' | 'nfl'
-type Tab = 'scores' | 'schedule' | 'standings' | 'news'
+type Tab = 'scores' | 'schedule' | 'standings' | 'leaders' | 'news'
 
 const SPORTS: { id: Sport; label: string; icon: string; color: string }[] = [
   { id: 'nhl', label: 'NHL', icon: '🏒', color: '#0ea5e9' },
@@ -18,10 +19,11 @@ const SPORTS: { id: Sport; label: string; icon: string; color: string }[] = [
   { id: 'nfl', label: 'NFL', icon: '🏈', color: '#a855f7' },
 ]
 
-const TABS: { id: Tab; label: string }[] = [
+const TABS: { id: Tab; label: string; nhlOnly?: boolean }[] = [
   { id: 'scores', label: 'Scores' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'standings', label: 'Standings' },
+  { id: 'leaders', label: 'Leaders', nhlOnly: true },
   { id: 'news', label: 'News' },
 ]
 
@@ -66,7 +68,7 @@ export default function App() {
           </div>
 
           <nav className={styles.nav}>
-            {TABS.map(t => (
+            {TABS.filter(t => !t.nhlOnly || sport === 'nhl').map(t => (
               <button
                 key={t.id}
                 className={`${styles.navBtn} ${tab === t.id ? styles.active : ''}`}
@@ -85,6 +87,7 @@ export default function App() {
             {tab === 'scores' && <Scores />}
             {tab === 'schedule' && <Schedule />}
             {tab === 'standings' && <Standings />}
+            {tab === 'leaders' && <NHLLeaders />}
             {tab === 'news' && <News sport="nhl" />}
           </>
         )}

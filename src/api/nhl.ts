@@ -1,5 +1,6 @@
 // NHL API v1 — proxied via Vite to avoid CORS
 const BASE = '/nhl/v1'
+const BASE_STATS = '/hockey-rest/stats/rest/en'
 
 export interface TeamAbbrev {
   default: string
@@ -135,6 +136,13 @@ export interface ScoreboardResponse {
   games: Game[]
 }
 
+function currentNHLSeason(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const startYear = now.getMonth() + 1 >= 10 ? year : year - 1
+  return `${startYear}${startYear + 1}`
+}
+
 function today(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -205,6 +213,39 @@ export interface BoxscoreResponse {
   } | null
 }
 
+export interface NHLLeaderPlayer {
+  id: number
+  firstName: { default: string }
+  lastName: { default: string }
+  sweaterNumber: number
+  headshot: string
+  teamAbbrev: string
+  position: string
+  value: number
+}
+
+export type NHLLeadersResponse = Record<string, NHLLeaderPlayer[]>
+
+export interface NHLRookiePlayer {
+  playerId: number
+  skaterFullName: string
+  teamAbbrevs: string
+  positionCode: string
+  goals: number
+  assists: number
+  points: number
+  plusMinus: number
+  penaltyMinutes: number
+  shots: number
+  ppGoals: number
+  gamesPlayed: number
+}
+
+export interface NHLRookieLeadersResponse {
+  data: NHLRookiePlayer[]
+  total: number
+}
+
 export const nhlApi = {
   scoreboard: (date?: string) =>
     get<ScoreboardResponse>(`/score/${date ?? today()}`),
@@ -220,6 +261,43 @@ export const nhlApi = {
 
   landing: (gameId: number) =>
     get<LandingResponse>(`/gamecenter/${gameId}/landing`),
+
+  skaterLeaders: async (limit = 5): Promise<NHLLeadersResponse> => {
+    const season = currentNHLSeason()
+    const cats = ['goals', 'assists', 'points', 'plusMinus', 'penaltyMins', 'goalsPp', 'goalsSh', 'toi']
+    const results = await Promise.allSettled(
+      cats.map(cat => get<NHLLeadersResponse>(`/skater-stats-leaders/${season}/2?categories=${cat}&limit=${limit}`))
+    )
+    const merged: NHLLeadersResponse = {}
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') Object.assign(merged, r.value)
+      else console.warn(`skater leaders category ${cats[i]} failed`)
+    })
+    return merged
+  },
+
+  goalieLeaders: async (limit = 5): Promise<NHLLeadersResponse> => {
+    const season = currentNHLSeason()
+    const cats = ['wins', 'goalsAgainstAverage', 'savePctg', 'shutouts']
+    const results = await Promise.allSettled(
+      cats.map(cat => get<NHLLeadersResponse>(`/goalie-stats-leaders/${season}/2?categories=${cat}&limit=${limit}`))
+    )
+    const merged: NHLLeadersResponse = {}
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') Object.assign(merged, r.value)
+      else console.warn(`goalie leaders category ${cats[i]} failed`)
+    })
+    return merged
+  },
+
+  rookieLeaders: async (limit = 10): Promise<NHLRookieLeadersResponse> => {
+    const season = currentNHLSeason()
+    const sort = encodeURIComponent(JSON.stringify([{ property: 'points', direction: 'DESC' }]))
+    const cayenne = encodeURIComponent(`gameTypeId=2 and seasonId=${season} and isRookie=1`)
+    const res = await fetch(`${BASE_STATS}/skater/summary?isAggregate=false&isGame=false&sort=${sort}&start=0&limit=${limit}&cayenneExp=${cayenne}`, { cache: 'no-store' })
+    if (!res.ok) throw new Error(`NHL rookie stats error: ${res.status}`)
+    return res.json() as Promise<NHLRookieLeadersResponse>
+  },
 }
 
 export interface LandingPenalty {

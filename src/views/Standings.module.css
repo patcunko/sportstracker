@@ -242,6 +242,94 @@
   border-top: 2px dashed rgba(245, 158, 11, 0.5);
 }
 
+.leaderSubtabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--surface);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+
+.leadersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.leaderCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.leaderCardTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.leaderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(42, 58, 82, 0.4);
+}
+
+.leaderRow:last-child {
+  border-bottom: none;
+}
+
+.leaderRank {
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 14px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.leaderHeadshot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface2);
+}
+
+.leaderName {
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderTeam {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.leaderVal {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
 .playInDot {
   display: inline-block;
   width: 10px;
