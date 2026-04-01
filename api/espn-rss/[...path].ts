@@ -1,13 +1,15 @@
-export const config = { runtime: 'edge' }
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-export default async function handler(request: Request): Promise<Response> {
-  const url = new URL(request.url)
-  const path = url.pathname.replace(/^\/api\/espn-rss\//, '')
-  const upstream = await fetch(`https://www.espn.com/${path}${url.search}`, {
-    headers: { 'User-Agent': 'sportstracker/1.0' },
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const path = (req.query.path as string[])?.join('/') ?? ''
+  const qs = new URLSearchParams(req.query as Record<string, string>)
+  qs.delete('path')
+  const search = qs.toString() ? `?${qs.toString()}` : ''
+  const upstream = await fetch(`https://www.espn.com/${path}${search}`, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
   })
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: { 'Content-Type': upstream.headers.get('content-type') ?? 'application/xml' },
-  })
+  const data = await upstream.text()
+  res.status(upstream.status)
+    .setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/xml')
+    .send(data)
 }
