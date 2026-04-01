@@ -5,6 +5,7 @@
     { "source": "/nhl/:path*",      "destination": "/api/nhl/:path*" },
     { "source": "/espn-rss/:path*", "destination": "/api/espn-rss/:path*" },
     { "source": "/nba-stats/:path*","destination": "/api/nba-stats/:path*" },
-    { "source": "/nba-cdn/:path*",  "destination": "/api/nba-cdn/:path*" }
+    { "source": "/nba-cdn/:path*",     "destination": "/api/nba-cdn/:path*" },
+    { "source": "/hockey-rest/:path*", "destination": "/api/hockey-rest/:path*" }
   ]
 }
