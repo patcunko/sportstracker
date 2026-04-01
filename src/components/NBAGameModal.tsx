@@ -145,8 +145,8 @@ export default function NBAGameModal({ gameId, onClose }: Props) {
 
   if (gameId === null) return null
 
-  const isLive = boxscore ? (boxscore.gameStatus === 2 || /^Q\d|Halftime/i.test(boxscore.gameStatusText)) : false
   const isFinal = boxscore ? (boxscore.gameStatus === 3 || /^final/i.test(boxscore.gameStatusText)) : false
+  const isLive = boxscore ? (!isFinal && !/[ap]m\b/i.test(boxscore.gameStatusText)) : false
   const hasStats = boxscore && (boxscore.homeTeam.players.some(p => p.played) || boxscore.awayTeam.players.some(p => p.played))
 
   function clockLabel(): string {

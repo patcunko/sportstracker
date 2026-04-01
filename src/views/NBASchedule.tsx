@@ -25,12 +25,15 @@ function formatDate(dateStr: string): string {
 
 function gameStatusLabel(game: NBAGame): { text: string; live: boolean; final: boolean } {
   const isFinal = game.statusId === 3 || /^final/i.test(game.statusText)
-  const isLive = !isFinal && (game.statusId === 2 || /^Q\d|Halftime|Half/i.test(game.statusText))
+  const isScheduled = game.statusId === 1 || /[ap]m\b/i.test(game.statusText)
+  const isLive = !isFinal && !isScheduled
 
   if (isFinal) return { text: game.statusText, live: false, final: true }
   if (isLive) {
-    const period = game.period <= 4 ? `Q${game.period}` : `OT${game.period > 5 ? game.period - 4 : ''}`
-    const text = game.clock ? `${period} ${game.clock}` : game.statusText
+    const period = game.period > 0
+      ? (game.period <= 4 ? `Q${game.period}` : `OT${game.period > 5 ? game.period - 4 : ''}`)
+      : ''
+    const text = game.clock && period ? `${period} ${game.clock}` : game.statusText
     return { text, live: true, final: false }
   }
   return { text: game.statusText, live: false, final: false }

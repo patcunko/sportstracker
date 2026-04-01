@@ -92,7 +92,7 @@ export function useNBASchedule(startDate?: string) {
   }, [fetch])
 
   useEffect(() => {
-    const hasLive = weekDays.some(d => d.games.some(g => g.statusId === 2 || /^Q\d|Halftime/i.test(g.statusText)))
+    const hasLive = weekDays.some(d => d.games.some(g => !(/^final/i.test(g.statusText) || /[ap]m\b/i.test(g.statusText))))
     const delay = hasLive ? 30_000 : 5 * 60_000
     const id = setInterval(() => { void fetch() }, delay)
     return () => clearInterval(id)

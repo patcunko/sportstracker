@@ -29,7 +29,7 @@ export default function NBAScores() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
   const { games, loading, error, lastUpdated, countdown, refetch } = useNBAScoreboard(dateInput)
 
-  const hasLive = games.some(g => g.statusId === 2 || /^Q\d|Halftime/i.test(g.statusText))
+  const hasLive = games.some(g => !(/^final/i.test(g.statusText) || /[ap]m\b/i.test(g.statusText)))
   const displayDate = dateInput ?? localDateStr()
 
   function navigate(delta: number) {

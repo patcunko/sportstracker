@@ -14,12 +14,13 @@ function periodLabel(period: number): string {
 
 function statusBadge(game: NBAGame): { label: string; live: boolean; final: boolean } {
   const isFinal = game.statusId === 3 || /^final/i.test(game.statusText)
-  const isLive = !isFinal && (game.statusId === 2 || /^Q\d|Halftime|Half/i.test(game.statusText))
+  const isScheduled = game.statusId === 1 || /[ap]m\b/i.test(game.statusText)
+  const isLive = !isFinal && !isScheduled
 
   if (isFinal) return { label: game.statusText, live: false, final: true }
   if (isLive) {
-    const period = periodLabel(game.period)
-    const label = game.clock ? `${period} ${game.clock}` : game.statusText
+    const period = game.period > 0 ? periodLabel(game.period) : ''
+    const label = game.clock && period ? `${period} ${game.clock}` : game.statusText
     return { label, live: true, final: false }
   }
   return { label: game.statusText, live: false, final: false }
@@ -29,8 +30,6 @@ export default function NBAGameCard({ game, onClick }: Props) {
   const status = statusBadge(game)
   const awayWon = status.final && (game.awayTeam.score ?? 0) > (game.homeTeam.score ?? 0)
   const homeWon = status.final && (game.homeTeam.score ?? 0) > (game.awayTeam.score ?? 0)
-  const hasScore = game.statusId !== 1
-
   return (
     <div
       className={`${styles.card} ${status.live ? styles.live : ''} ${onClick ? styles.clickable : ''}`}
@@ -49,14 +48,14 @@ export default function NBAGameCard({ game, onClick }: Props) {
         <TeamRow
           logo={game.awayTeam.logo}
           abbrev={game.awayTeam.abbrev}
-          score={hasScore ? (game.awayTeam.score ?? 0) : undefined}
+          score={game.awayTeam.score ?? 0}
           winner={awayWon}
         />
         <div className={styles.vs}>vs</div>
         <TeamRow
           logo={game.homeTeam.logo}
           abbrev={game.homeTeam.abbrev}
-          score={hasScore ? (game.homeTeam.score ?? 0) : undefined}
+          score={game.homeTeam.score ?? 0}
           winner={homeWon}
         />
       </div>
@@ -71,19 +70,14 @@ export default function NBAGameCard({ game, onClick }: Props) {
   )
 }
 
-function TeamRow({
-  logo, abbrev, score, winner,
-}: {
-  logo: string
-  abbrev: string
-  score?: number
-  winner: boolean
+function TeamRow({ logo, abbrev, score, winner }: {
+  logo: string; abbrev: string; score: number; winner: boolean
 }) {
   return (
     <div className={`${styles.team} ${winner ? styles.winner : ''}`}>
       <img src={logo} alt={abbrev} className={styles.logo} />
       <span className={styles.abbrev}>{abbrev}</span>
-      {score !== undefined && <span className={styles.score}>{score}</span>}
+      <span className={styles.score}>{score}</span>
     </div>
   )
 }

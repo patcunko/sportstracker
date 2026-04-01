@@ -7,10 +7,6 @@ function localDate(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function isoToMDY(iso: string): string {
-  const [y, m, d] = iso.split('-')
-  return `${m}/${d}/${y}`
-}
 
 export function currentNBASeason(): string {
   const now = new Date()
@@ -154,56 +150,54 @@ export interface NBABoxscoreResponse {
   awayTeam: NBABoxscoreTeam
 }
 
-// ─── Scoreboard parsing ───────────────────────────────────────────────────────
+// ─── scoreboardv3 types & parsing ────────────────────────────────────────────
 
-function parseScoreboard(res: StatsResponse, date: string): NBAGame[] {
-  const ghRS = findRS(res, 'GameHeader')
-  const lsRS = findRS(res, 'LineScore')
-  if (!ghRS || !lsRS) return []
+interface V3Team {
+  teamId: number; teamCity: string; teamName: string; teamTricode: string
+  wins: number; losses: number; score: number
+}
 
-  const headers = toObjects(ghRS)
-  const lineScores = toObjects(lsRS)
-
-  const lsMap = new Map<string, Record<string, unknown>>()
-  for (const ls of lineScores) {
-    lsMap.set(`${ls['GAME_ID']}_${ls['TEAM_ID']}`, ls)
+interface V3Game {
+  gameId: string; gameStatus: number; gameStatusText: string
+  period: number; gameClock: string; gameTimeUTC: string
+  homeTeam: V3Team; awayTeam: V3Team
+  broadcasters?: {
+    nationalBroadcasters?: Array<{ broadcasterAbbreviation: string }>
   }
+}
 
-  return headers.map(gh => {
-    const gameId = gh['GAME_ID'] as string
-    const homeId = gh['HOME_TEAM_ID'] as number
-    const awayId = gh['VISITOR_TEAM_ID'] as number
-    const homeLS = lsMap.get(`${gameId}_${homeId}`)
-    const awayLS = lsMap.get(`${gameId}_${awayId}`)
+interface V3Response {
+  scoreboard: { games: V3Game[] }
+}
 
-    const pts = (ls: Record<string, unknown> | undefined) => {
-      const v = ls?.['PTS']
-      return v != null && v !== '' ? Number(v) : null
-    }
-
+function parseScoreboardV3(res: V3Response, date: string): NBAGame[] {
+  return res.scoreboard.games.map(g => {
+    const tv = g.broadcasters?.nationalBroadcasters?.[0]?.broadcasterAbbreviation ?? null
+    const clockRaw = g.gameClock ?? ''
+    const clock = clockRaw.startsWith('PT') ? formatClock(clockRaw) : clockRaw.trim()
     return {
-      gameId,
+      gameId: g.gameId,
       gameDate: date,
-      statusId: Number(gh['GAME_STATUS_ID']),
-      statusText: (gh['GAME_STATUS_TEXT'] as string).trim(),
-      period: Number(gh['LIVE_PERIOD']) || 0,
-      clock: ((gh['LIVE_PC_TIME'] as string) || '').trim(),
-      tvBroadcaster: (gh['NATL_TV_BROADCASTER_ABBREVIATION'] as string | null) || null,
+      statusId: g.gameStatus,
+      statusText: g.gameStatusText.trim(),
+      period: g.period,
+      clock,
+      tvBroadcaster: tv,
       homeTeam: {
-        teamId: homeId,
-        abbrev: (homeLS?.['TEAM_ABBREVIATION'] as string) || '',
-        cityName: (homeLS?.['TEAM_CITY_NAME'] as string) || '',
-        winsLosses: (homeLS?.['TEAM_WINS_LOSSES'] as string) || '',
-        score: pts(homeLS),
-        logo: teamLogo(homeId),
+        teamId: g.homeTeam.teamId,
+        abbrev: g.homeTeam.teamTricode,
+        cityName: g.homeTeam.teamCity,
+        winsLosses: `${g.homeTeam.wins}-${g.homeTeam.losses}`,
+        score: g.gameStatus === 1 ? null : g.homeTeam.score,
+        logo: teamLogo(g.homeTeam.teamId),
       },
       awayTeam: {
-        teamId: awayId,
-        abbrev: (awayLS?.['TEAM_ABBREVIATION'] as string) || '',
-        cityName: (awayLS?.['TEAM_CITY_NAME'] as string) || '',
-        winsLosses: (awayLS?.['TEAM_WINS_LOSSES'] as string) || '',
-        score: pts(awayLS),
-        logo: teamLogo(awayId),
+        teamId: g.awayTeam.teamId,
+        abbrev: g.awayTeam.teamTricode,
+        cityName: g.awayTeam.teamCity,
+        winsLosses: `${g.awayTeam.wins}-${g.awayTeam.losses}`,
+        score: g.gameStatus === 1 ? null : g.awayTeam.score,
+        logo: teamLogo(g.awayTeam.teamId),
       },
     }
   })
@@ -363,10 +357,10 @@ async function cdnGet<T>(path: string): Promise<T> {
 export const nbaApi = {
   scoreboard: async (date?: string): Promise<NBAGame[]> => {
     const iso = date ?? localDate()
-    const res = await statsGet('/scoreboardV2', {
-      GameDate: isoToMDY(iso), LeagueID: '00', DayOffset: '0',
-    })
-    return parseScoreboard(res, iso)
+    const qs = new URLSearchParams({ GameDate: iso, LeagueID: '00' }).toString()
+    const res = await fetch(`${BASE_STATS}/scoreboardv3?${qs}`, { cache: 'no-store' })
+    if (!res.ok) throw new Error(`NBA scoreboard error: ${res.status}`)
+    return parseScoreboardV3(await res.json() as V3Response, iso)
   },
 
   standings: async (): Promise<NBAStandingsTeam[]> => {
