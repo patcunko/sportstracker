@@ -10,6 +10,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/nhl/, ''),
       },
+      '/espn-rss': {
+        target: 'https://www.espn.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/espn-rss/, ''),
+      },
     },
   },
 })

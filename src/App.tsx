@@ -2,29 +2,64 @@ import { useState } from 'react'
 import Scores from './views/Scores'
 import Schedule from './views/Schedule'
 import Standings from './views/Standings'
+import News from './views/News'
 import styles from './App.module.css'
 
-type Tab = 'scores' | 'schedule' | 'standings'
+type Sport = 'nhl' | 'nba' | 'mlb' | 'nfl'
+type Tab = 'scores' | 'schedule' | 'standings' | 'news'
+
+const SPORTS: { id: Sport; label: string; icon: string; color: string }[] = [
+  { id: 'nhl', label: 'NHL', icon: '🏒', color: '#0ea5e9' },
+  { id: 'nba', label: 'NBA', icon: '🏀', color: '#f97316' },
+  { id: 'mlb', label: 'MLB', icon: '⚾', color: '#22c55e' },
+  { id: 'nfl', label: 'NFL', icon: '🏈', color: '#a855f7' },
+]
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'scores', label: 'Scores' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'standings', label: 'Standings' },
+  { id: 'news', label: 'News' },
 ]
 
+function ComingSoon({ sport }: { sport: Sport }) {
+  const s = SPORTS.find(x => x.id === sport)!
+  return (
+    <div className={styles.comingSoon}>
+      <span className={styles.comingSoonIcon}>{s.icon}</span>
+      <h2 className={styles.comingSoonTitle}>{s.label} coming soon</h2>
+      <p className={styles.comingSoonSub}>We're working on it.</p>
+    </div>
+  )
+}
+
 export default function App() {
+  const [sport, setSport] = useState<Sport>('nhl')
   const [tab, setTab] = useState<Tab>('scores')
+
+  const activeSport = SPORTS.find(s => s.id === sport)!
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}>
-            <span className={styles.brandIcon}>🏒</span>
-            <div>
-              <span className={styles.brandName}>SportsTracker</span>
-              <span className={styles.sport}>NHL</span>
-            </div>
+            <span className={styles.brandIcon}>🏆</span>
+            <span className={styles.brandName}>SportsTracker</span>
+          </div>
+
+          <div className={styles.sportPicker}>
+            {SPORTS.map(s => (
+              <button
+                key={s.id}
+                className={`${styles.sportBtn} ${sport === s.id ? styles.sportActive : ''}`}
+                style={sport === s.id ? { '--sport-color': s.color } as React.CSSProperties : undefined}
+                onClick={() => setSport(s.id)}
+              >
+                <span className={styles.sportIcon}>{s.icon}</span>
+                <span className={styles.sportLabel}>{s.label}</span>
+              </button>
+            ))}
           </div>
 
           <nav className={styles.nav}>
@@ -42,13 +77,20 @@ export default function App() {
       </header>
 
       <main className={styles.main}>
-        {tab === 'scores' && <Scores />}
-        {tab === 'schedule' && <Schedule />}
-        {tab === 'standings' && <Standings />}
+        {sport === 'nhl' ? (
+          <>
+            {tab === 'scores' && <Scores />}
+            {tab === 'schedule' && <Schedule />}
+            {tab === 'standings' && <Standings />}
+            {tab === 'news' && <News />}
+          </>
+        ) : (
+          <ComingSoon sport={sport} />
+        )}
       </main>
 
       <footer className={styles.footer}>
-        Data provided by the NHL API · Updates automatically during live games
+        Data provided by the {activeSport.label} API · Updates automatically during live games
       </footer>
     </div>
   )
