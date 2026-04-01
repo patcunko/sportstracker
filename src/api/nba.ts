@@ -1,6 +1,6 @@
 // NBA Stats API — proxied via Vite to avoid CORS
-const BASE_STATS = '/nba-stats/stats'
-const BASE_CDN = '/nba-cdn/static/json/liveData'
+const BASE_STATS = '/api/nba-stats/stats'
+const BASE_CDN = '/api/nba-cdn/static/json/liveData'
 
 function localDate(): string {
   const d = new Date()

@@ -31,10 +31,10 @@ function timeAgo(dateStr: string): string {
 }
 
 const RSS_PATHS: Record<string, string> = {
-  nhl: '/espn-rss/espn/rss/nhl/news',
-  nba: '/espn-rss/espn/rss/nba/news',
-  mlb: '/espn-rss/espn/rss/mlb/news',
-  nfl: '/espn-rss/espn/rss/nfl/news',
+  nhl: '/api/espn-rss/espn/rss/nhl/news',
+  nba: '/api/espn-rss/espn/rss/nba/news',
+  mlb: '/api/espn-rss/espn/rss/mlb/news',
+  nfl: '/api/espn-rss/espn/rss/nfl/news',
 }
 
 export default function News({ sport = 'nhl' }: { sport?: string }) {

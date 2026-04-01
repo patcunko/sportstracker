@@ -5,20 +5,20 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/nhl': {
+      '/api/nhl': {
         target: 'https://api-web.nhle.com',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/nhl/, ''),
+        rewrite: path => path.replace(/^\/api\/nhl/, ''),
       },
-      '/espn-rss': {
+      '/api/espn-rss': {
         target: 'https://www.espn.com',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/espn-rss/, ''),
+        rewrite: path => path.replace(/^\/api\/espn-rss/, ''),
       },
-      '/nba-stats': {
+      '/api/nba-stats': {
         target: 'https://stats.nba.com',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/nba-stats/, ''),
+        rewrite: path => path.replace(/^\/api\/nba-stats/, ''),
         headers: {
           Referer: 'https://www.nba.com/',
           Origin: 'https://www.nba.com',
@@ -27,15 +27,15 @@ export default defineConfig({
           'x-nba-stats-token': 'true',
         },
       },
-      '/nba-cdn': {
+      '/api/nba-cdn': {
         target: 'https://cdn.nba.com',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/nba-cdn/, ''),
+        rewrite: path => path.replace(/^\/api\/nba-cdn/, ''),
       },
-      '/hockey-rest': {
+      '/api/hockey-rest': {
         target: 'https://api.nhle.com',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/hockey-rest/, ''),
+        rewrite: path => path.replace(/^\/api\/hockey-rest/, ''),
       },
     },
   },

@@ -1,6 +1,6 @@
 // NHL API v1 — proxied via Vite to avoid CORS
-const BASE = '/nhl/v1'
-const BASE_STATS = '/hockey-rest/stats/rest/en'
+const BASE = '/api/nhl/v1'
+const BASE_STATS = '/api/hockey-rest/stats/rest/en'
 
 export interface TeamAbbrev {
   default: string
