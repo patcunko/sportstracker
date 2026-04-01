@@ -5,7 +5,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const qs = new URLSearchParams(req.query as Record<string, string>)
   qs.delete('path')
   const search = qs.toString() ? `?${qs.toString()}` : ''
-  const upstream = await fetch(`https://api-web.nhle.com/v1/${path}${search}`, {
+  const upstream = await fetch(`https://api-web.nhle.com/${path}${search}`, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'application/json',
