@@ -379,6 +379,13 @@
   text-align: center;
 }
 
+.noStats {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 40px 0;
+  text-align: center;
+}
+
 .penaltyPeriod {
   margin-bottom: 20px;
 }

@@ -187,8 +187,8 @@ export interface BoxscoreTeamStats {
   id: number
   abbrev: string
   commonName: { default: string }
-  score: number
-  sog: number
+  score?: number
+  sog?: number
   logo: string
 }
 
@@ -197,12 +197,12 @@ export interface BoxscoreResponse {
   gameState: string
   awayTeam: BoxscoreTeamStats
   homeTeam: BoxscoreTeamStats
-  clock: { timeRemaining: string; running: boolean; inIntermission: boolean }
-  periodDescriptor: { number: number; periodType: string }
-  playerByGameStats: {
+  clock?: { timeRemaining: string; running: boolean; inIntermission: boolean }
+  periodDescriptor?: { number: number; periodType: string } | null
+  playerByGameStats?: {
     awayTeam: { forwards: BoxscoreSkater[]; defense: BoxscoreSkater[]; goalies: BoxscoreGoalie[] }
     homeTeam: { forwards: BoxscoreSkater[]; defense: BoxscoreSkater[]; goalies: BoxscoreGoalie[] }
-  }
+  } | null
 }
 
 export const nhlApi = {

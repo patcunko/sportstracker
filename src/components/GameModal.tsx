@@ -214,9 +214,16 @@ export default function GameModal({ gameId, onClose }: Props) {
 
   function clockLabel(): string {
     if (!boxscore) return ''
-    if (isFinal) return 'Final'
+    if (isFinal) {
+      const lastPeriod = boxscore.periodDescriptor
+      if (lastPeriod && lastPeriod.periodType !== 'REG') {
+        return `Final/${lastPeriod.periodType === 'SO' ? 'SO' : 'OT'}`
+      }
+      return 'Final'
+    }
     const pd = boxscore.periodDescriptor
     const cl = boxscore.clock
+    if (!pd || !cl) return ''
     const period = periodLabel(pd.number, pd.periodType)
     const time = cl.inIntermission ? 'INT' : cl.timeRemaining
     return `${period} ${time}`.trim()
@@ -251,9 +258,13 @@ export default function GameModal({ gameId, onClose }: Props) {
 
               <div className={styles.scoreBlock}>
                 <div className={styles.scoreDisplay}>
-                  <span className={styles.scoreNum}>{boxscore.awayTeam.score}</span>
+                  <span className={styles.scoreNum}>
+                    {boxscore.awayTeam.score ?? '–'}
+                  </span>
                   <span className={styles.scoreSep}>–</span>
-                  <span className={styles.scoreNum}>{boxscore.homeTeam.score}</span>
+                  <span className={styles.scoreNum}>
+                    {boxscore.homeTeam.score ?? '–'}
+                  </span>
                 </div>
                 <div className={`${styles.clockLabel} ${isLive ? styles.liveLabel : ''}`}>
                   {isLive && <span className={styles.liveDot} />}
@@ -268,11 +279,13 @@ export default function GameModal({ gameId, onClose }: Props) {
             </div>
 
             {/* SOG bar */}
-            <div className={styles.sogBar}>
-              <span className={styles.sogNum}>{boxscore.awayTeam.sog}</span>
-              <span className={styles.sogLabel}>SOG</span>
-              <span className={styles.sogNum}>{boxscore.homeTeam.sog}</span>
-            </div>
+            {(boxscore.awayTeam.sog != null || boxscore.homeTeam.sog != null) && (
+              <div className={styles.sogBar}>
+                <span className={styles.sogNum}>{boxscore.awayTeam.sog ?? 0}</span>
+                <span className={styles.sogLabel}>SOG</span>
+                <span className={styles.sogNum}>{boxscore.homeTeam.sog ?? 0}</span>
+              </div>
+            )}
 
             {/* Tabs */}
             <div className={styles.tabs}>
@@ -292,7 +305,11 @@ export default function GameModal({ gameId, onClose }: Props) {
 
             {/* Content */}
             <div className={styles.content}>
-              {tab === 'skaters' && (
+              {!boxscore.playerByGameStats && (tab === 'skaters' || tab === 'goalies') && (
+                <p className={styles.noStats}>No stats available yet.</p>
+              )}
+
+              {tab === 'skaters' && boxscore.playerByGameStats && (
                 <>
                   <SkaterTable
                     skaters={[
@@ -313,7 +330,7 @@ export default function GameModal({ gameId, onClose }: Props) {
                 </>
               )}
 
-              {tab === 'goalies' && (
+              {tab === 'goalies' && boxscore.playerByGameStats && (
                 <>
                   <GoalieTable
                     goalies={boxscore.playerByGameStats.awayTeam.goalies}
