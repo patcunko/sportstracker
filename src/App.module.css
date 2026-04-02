@@ -6,7 +6,7 @@
 
 .header {
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--accent);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -40,6 +40,10 @@
   font-size: 16px;
   letter-spacing: -0.02em;
   white-space: nowrap;
+  background: linear-gradient(90deg, #00a6ed, #1789fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Sport picker */
@@ -109,8 +113,8 @@
 }
 
 .navBtn.active {
-  color: var(--text);
-  background: var(--surface3);
+  color: var(--accent);
+  background: rgba(0, 166, 237, 0.12);
   font-weight: 600;
 }
 

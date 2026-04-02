@@ -283,7 +283,7 @@
 }
 
 .plus { color: var(--win); }
-.minus { color: #f87171; }
+.minus { color: var(--live); }
 
 .dnp {
   color: var(--text-muted);
@@ -368,7 +368,7 @@
   to { transform: rotate(360deg); }
 }
 
-.errorMsg { color: #f87171; text-align: center; }
+.errorMsg { color: var(--live); text-align: center; }
 
 .noStats {
   color: var(--text-muted);
