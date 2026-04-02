@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const path = req.url.replace(/^\/api\/nba-stats/, '')
   const upstream = await fetch(`https://stats.nba.com${path}`, {
     headers: {
@@ -12,6 +12,6 @@ export default async function handler(req, res) {
   })
   const body = await upstream.arrayBuffer()
   res.status(upstream.status)
-    .setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/json')
-    .end(Buffer.from(body))
+  res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/json')
+  res.end(Buffer.from(body))
 }

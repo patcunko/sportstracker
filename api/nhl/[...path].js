@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const path = req.url.replace(/^\/api\/nhl/, '')
   const upstream = await fetch(`https://api-web.nhle.com${path}`, {
     headers: {
@@ -10,6 +10,6 @@ export default async function handler(req, res) {
   })
   const body = await upstream.arrayBuffer()
   res.status(upstream.status)
-    .setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/json')
-    .end(Buffer.from(body))
+  res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/json')
+  res.end(Buffer.from(body))
 }

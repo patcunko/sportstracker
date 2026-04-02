@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const path = req.url.replace(/^\/api\/espn-rss/, '')
   const upstream = await fetch(`https://www.espn.com${path}`, {
     headers: {
@@ -7,6 +7,6 @@ export default async function handler(req, res) {
   })
   const body = await upstream.arrayBuffer()
   res.status(upstream.status)
-    .setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/xml')
-    .end(Buffer.from(body))
+  res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/xml')
+  res.end(Buffer.from(body))
 }
