@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const path = req.url.replace(/^\/api\/nba-cdn/, '')
   const upstream = await fetch(`https://cdn.nba.com${path}`, {
     headers: {

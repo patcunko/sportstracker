@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const path = req.url.replace(/^\/api\/espn-rss/, '')
   const upstream = await fetch(`https://www.espn.com${path}`, {
     headers: {

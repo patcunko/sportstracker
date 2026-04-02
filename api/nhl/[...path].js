@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const path = req.url.replace(/^\/api\/nhl/, '')
   const upstream = await fetch(`https://api-web.nhle.com${path}`, {
     headers: {
