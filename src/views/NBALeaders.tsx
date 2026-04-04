@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNBALeaders } from '../hooks/useNBA'
 import { nbaApi } from '../api/nba'
 import type { NBALeaderPlayer } from '../api/nba'
+import NBAPlayerModal from '../components/NBAPlayerModal'
 import styles from './Standings.module.css'
 
 const CATS: { key: string; label: string; fmt?: (v: number) => string }[] = [
@@ -34,30 +35,44 @@ type ExpandedModal = {
   error: string | null
 }
 
-function LeaderCard({ title, players, fmt, onClick }: {
-  title: string
-  players: NBALeaderPlayer[]
-  fmt?: (v: number) => string
-  onClick: () => void
+function PlayerRow({ p, i, fmt, onPlayerClick }: {
+  p: NBALeaderPlayer; i: number; fmt?: (v: number) => string; onPlayerClick: (id: number) => void
 }) {
   return (
-    <div className={`${styles.leaderCard} ${styles.leaderCardClickable}`} onClick={onClick}>
-      <div className={styles.leaderCardTitle}>{title}</div>
-      {players.map((p, i) => (
-        <div key={p.playerId} className={styles.leaderRow}>
-          <span className={styles.leaderRank}>{i + 1}</span>
-          <img src={nbaHeadshot(p.playerId)} alt="" className={styles.leaderHeadshot} />
-          <span className={styles.leaderName}>{p.playerName}</span>
-          <span className={styles.leaderTeam}>{p.team}</span>
-          <span className={styles.leaderVal}>{fmt ? fmt(p.value) : p.value.toFixed(1)}</span>
-        </div>
-      ))}
-      <div className={styles.leaderCardMore}>See more →</div>
+    <div
+      className={`${styles.modalLeaderRow} ${styles.leaderRowClickable}`}
+      onClick={() => onPlayerClick(p.playerId)}
+    >
+      <span className={styles.leaderRank}>{i + 1}</span>
+      <img src={nbaHeadshot(p.playerId)} alt="" className={styles.leaderHeadshot} />
+      <span className={styles.leaderName}>{p.playerName}</span>
+      <span className={styles.leaderTeam}>{p.team}</span>
+      <span className={styles.leaderVal}>{fmt ? fmt(p.value) : p.value.toFixed(1)}</span>
     </div>
   )
 }
 
-function LeaderModal({ modal, onClose }: { modal: ExpandedModal; onClose: () => void }) {
+function LeaderCard({ title, players, fmt, onExpand, onPlayerClick }: {
+  title: string
+  players: NBALeaderPlayer[]
+  fmt?: (v: number) => string
+  onExpand: () => void
+  onPlayerClick: (id: number) => void
+}) {
+  return (
+    <div className={styles.leaderCard}>
+      <div className={`${styles.leaderCardTitle} ${styles.leaderCardClickable}`} onClick={onExpand}>{title}</div>
+      {players.map((p, i) => (
+        <PlayerRow key={p.playerId} p={p} i={i} fmt={fmt} onPlayerClick={onPlayerClick} />
+      ))}
+      <div className={styles.leaderCardMore} onClick={onExpand}>See more →</div>
+    </div>
+  )
+}
+
+function LeaderModal({ modal, onClose, onPlayerClick }: {
+  modal: ExpandedModal; onClose: () => void; onPlayerClick: (id: number) => void
+}) {
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
@@ -66,18 +81,10 @@ function LeaderModal({ modal, onClose }: { modal: ExpandedModal; onClose: () => 
           <button className={styles.modalClose} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
-          {modal.loading && (
-            <div className={styles.center}><div className={styles.spinner} /></div>
-          )}
+          {modal.loading && <div className={styles.center}><div className={styles.spinner} /></div>}
           {modal.error && <div className={styles.error}>⚠ {modal.error}</div>}
           {modal.players && modal.players.map((p, i) => (
-            <div key={p.playerId} className={styles.modalLeaderRow}>
-              <span className={styles.leaderRank}>{i + 1}</span>
-              <img src={nbaHeadshot(p.playerId)} alt="" className={styles.leaderHeadshot} />
-              <span className={styles.leaderName}>{p.playerName}</span>
-              <span className={styles.leaderTeam}>{p.team}</span>
-              <span className={styles.leaderVal}>{modal.fmt ? modal.fmt(p.value) : p.value.toFixed(1)}</span>
-            </div>
+            <PlayerRow key={p.playerId} p={p} i={i} fmt={modal.fmt} onPlayerClick={onPlayerClick} />
           ))}
         </div>
       </div>
@@ -89,6 +96,7 @@ export default function NBALeaders() {
   const { leaders, rookieLeaders, loading, error } = useNBALeaders()
   const [tab, setTab] = useState<'players' | 'rookies'>('players')
   const [modal, setModal] = useState<ExpandedModal | null>(null)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null)
 
   async function openModal(cat: { key: string; label: string; fmt?: (v: number) => string }, isRookie: boolean) {
     setModal({ title: cat.label, catKey: cat.key, isRookie, fmt: cat.fmt, players: null, loading: true, error: null })
@@ -100,6 +108,11 @@ export default function NBALeaders() {
     } catch {
       setModal(m => m ? { ...m, error: 'Failed to load', loading: false } : null)
     }
+  }
+
+  function handlePlayerClick(id: number) {
+    setModal(null)
+    setSelectedPlayerId(id)
   }
 
   if (loading) {
@@ -115,7 +128,8 @@ export default function NBALeaders() {
 
   return (
     <div className={styles.container}>
-      {modal && <LeaderModal modal={modal} onClose={() => setModal(null)} />}
+      {modal && <LeaderModal modal={modal} onClose={() => setModal(null)} onPlayerClick={handlePlayerClick} />}
+      {selectedPlayerId && <NBAPlayerModal playerId={selectedPlayerId} onClose={() => setSelectedPlayerId(null)} />}
 
       <div className={styles.tabs}>
         {(['players', 'rookies'] as const).map(t => (
@@ -137,7 +151,8 @@ export default function NBALeaders() {
               title={cat.label}
               players={leaders[cat.key]}
               fmt={cat.fmt}
-              onClick={() => openModal(cat, false)}
+              onExpand={() => openModal(cat, false)}
+              onPlayerClick={handlePlayerClick}
             />
           ) : null)}
         </div>
@@ -150,7 +165,8 @@ export default function NBALeaders() {
               key={cat.key}
               title={cat.label}
               players={rookieLeaders[cat.key]}
-              onClick={() => openModal(cat, true)}
+              onExpand={() => openModal(cat, true)}
+              onPlayerClick={handlePlayerClick}
             />
           ) : null)}
         </div>

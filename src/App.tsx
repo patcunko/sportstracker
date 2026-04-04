@@ -9,6 +9,7 @@ import NBAScores from './views/NBAScores'
 import NBASchedule from './views/NBASchedule'
 import NBAStandings from './views/NBAStandings'
 import NBALeaders from './views/NBALeaders'
+import NBATeams from './views/NBATeams'
 import styles from './App.module.css'
 
 type Sport = 'nhl' | 'nba' | 'mlb' | 'nfl'
@@ -24,7 +25,7 @@ const SPORTS: { id: Sport; label: string; icon: string; color: string }[] = [
 const TABS: { id: Tab; label: string; sports?: Sport[] }[] = [
   { id: 'scores', label: 'Scores' },
   { id: 'leaders', label: 'Leaders', sports: ['nhl', 'nba'] },
-  { id: 'teams', label: 'Teams', sports: ['nhl'] },
+  { id: 'teams', label: 'Teams', sports: ['nhl', 'nba'] },
   { id: 'schedule', label: 'Schedule' },
   { id: 'standings', label: 'Standings' },
   { id: 'news', label: 'News' },
@@ -105,6 +106,7 @@ export default function App() {
             {tab === 'leaders' && <NBALeaders />}
             {tab === 'schedule' && <NBASchedule />}
             {tab === 'standings' && <NBAStandings />}
+            {tab === 'teams' && <NBATeams />}
             {tab === 'news' && <News sport="nba" />}
           </>
         )}

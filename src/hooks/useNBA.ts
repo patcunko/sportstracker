@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { nbaApi, type NBAGame, type NBADay, type NBAStandingsTeam, type NBABoxscoreResponse, type NBALeadersResponse, type NBALeaderPlayer } from '../api/nba'
+import { nbaApi, type NBAGame, type NBADay, type NBAStandingsTeam, type NBABoxscoreResponse, type NBALeadersResponse, type NBALeaderPlayer, type NBATeamPlayer, type NBAPlayerInfo, type NBAPlayerSeasonStats } from '../api/nba'
 
 const REFRESH_INTERVAL = 30
 
@@ -197,4 +197,57 @@ export function useNBALeaders() {
   return { leaders, rookieLeaders, loading, error }
 }
 
-export type { NBAGame, NBADay, NBAStandingsTeam }
+export function useNBATeamRoster(teamId: number | null) {
+  const [players, setPlayers] = useState<NBATeamPlayer[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (!teamId) return
+    setLoading(true)
+    try {
+      const data = await nbaApi.teamRoster(teamId)
+      setPlayers(data)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load roster')
+    } finally {
+      setLoading(false)
+    }
+  }, [teamId])
+
+  useEffect(() => { if (teamId) void fetchData() }, [fetchData, teamId])
+  return { players, loading, error }
+}
+
+export function useNBAPlayer(playerId: number | null) {
+  const [info, setInfo] = useState<NBAPlayerInfo | null>(null)
+  const [career, setCareer] = useState<NBAPlayerSeasonStats[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (!playerId) return
+    setLoading(true)
+    setInfo(null)
+    setCareer([])
+    try {
+      const [i, c] = await Promise.all([
+        nbaApi.playerInfo(playerId),
+        nbaApi.playerCareerStats(playerId),
+      ])
+      setInfo(i)
+      setCareer(c)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load player')
+    } finally {
+      setLoading(false)
+    }
+  }, [playerId])
+
+  useEffect(() => { if (playerId) void fetchData() }, [fetchData, playerId])
+  return { info, career, loading, error }
+}
+
+export type { NBAGame, NBADay, NBAStandingsTeam, NBATeamPlayer, NBAPlayerInfo, NBAPlayerSeasonStats }

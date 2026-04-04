@@ -91,6 +91,57 @@ export interface NBAStandingsTeam {
   logo: string
 }
 
+export interface NBATeamPlayer {
+  playerId: number
+  playerName: string
+  jerseyNum: string
+  position: string
+  gamesPlayed: number
+  points: number
+  rebounds: number
+  assists: number
+  steals: number
+  blocks: number
+  fgPct: number
+  fg3Pct: number
+  ftPct: number
+  plusMinus: number
+  minutes: number
+}
+
+export interface NBAPlayerInfo {
+  playerId: number
+  firstName: string
+  lastName: string
+  birthdate: string
+  country: string
+  height: string
+  weight: string
+  jerseyNum: string
+  position: string
+  teamId: number
+  teamName: string
+  teamAbbrev: string
+  logo: string
+  isActive: boolean
+}
+
+export interface NBAPlayerSeasonStats {
+  season: string
+  teamAbbrev: string
+  gamesPlayed: number
+  points: number
+  rebounds: number
+  assists: number
+  steals: number
+  blocks: number
+  fgPct: number
+  fg3Pct: number
+  ftPct: number
+  plusMinus: number
+  minutes: number
+}
+
 export interface NBALeaderPlayer {
   playerId: number
   playerName: string
@@ -233,9 +284,8 @@ function parseStandings(res: StatsResponse): NBAStandingsTeam[] {
   return toObjects(rs).map(row => {
     const teamId = Number(row['TeamID'])
     const wins = Number(row['WINS']) || 0
-    const losses = Number(row['L']) || 0
-    const pctRaw = row['PCT']
-    const pct = pctRaw != null ? Number(pctRaw) : (wins + losses > 0 ? wins / (wins + losses) : 0)
+    const losses = Number(row['LOSSES']) || 0
+    const pct = wins + losses > 0 ? wins / (wins + losses) : 0
     return {
       teamId,
       teamCity: (row['TeamCity'] as string) ?? '',
@@ -248,8 +298,8 @@ function parseStandings(res: StatsResponse): NBAStandingsTeam[] {
       pct,
       conferenceRank: Number(row['PlayoffRank']) || 0,
       divisionRank: Number(row['DivisionRank']) || 0,
-      homeRecord: (row['HomeRecord'] as string) ?? '',
-      roadRecord: (row['RoadRecord'] as string) ?? '',
+      homeRecord: (row['HOME'] as string) ?? '',
+      roadRecord: (row['ROAD'] as string) ?? '',
       l10: (row['L10'] as string) ?? '',
       streak: (row['strCurrentStreak'] as string) ?? '',
       logo: teamLogo(teamId),
@@ -453,6 +503,82 @@ export const nbaApi = {
       else console.warn(`NBA leaders category ${cats[i]} failed`)
     })
     return merged
+  },
+
+  teamRoster: async (teamId: number): Promise<NBATeamPlayer[]> => {
+    const res = await statsGet('/leaguedashplayerstats', {
+      LeagueID: '00', PerMode: 'PerGame', Season: currentNBASeason(),
+      SeasonType: 'Regular Season', TeamID: String(teamId),
+      MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
+      LastNGames: '0', Month: '0', OpponentTeamID: '0',
+      PORound: '0', Period: '0', TwoWay: '0',
+    })
+    const rs = findRS(res, 'LeagueDashPlayerStats')
+    if (!rs) return []
+    return toObjects(rs)
+      .sort((a, b) => Number(b['PTS']) - Number(a['PTS']))
+      .map(row => ({
+        playerId: Number(row['PLAYER_ID']),
+        playerName: String(row['PLAYER_NAME']),
+        jerseyNum: '',
+        position: '',
+        gamesPlayed: Number(row['GP']),
+        points: Number(row['PTS']),
+        rebounds: Number(row['REB']),
+        assists: Number(row['AST']),
+        steals: Number(row['STL']),
+        blocks: Number(row['BLK']),
+        fgPct: Number(row['FG_PCT']),
+        fg3Pct: Number(row['FG3_PCT']),
+        ftPct: Number(row['FT_PCT']),
+        plusMinus: Number(row['PLUS_MINUS']),
+        minutes: Number(row['MIN']),
+      }))
+  },
+
+  playerInfo: async (playerId: number): Promise<NBAPlayerInfo> => {
+    const res = await statsGet('/commonplayerinfo', { PlayerID: String(playerId) })
+    const rs = findRS(res, 'CommonPlayerInfo')
+    if (!rs || rs.rowSet.length === 0) throw new Error('Player not found')
+    const row = toObjects(rs)[0]
+    const tid = Number(row['TEAM_ID'])
+    return {
+      playerId,
+      firstName: String(row['FIRST_NAME']),
+      lastName: String(row['LAST_NAME']),
+      birthdate: String(row['BIRTHDATE'] ?? '').slice(0, 10),
+      country: String(row['COUNTRY'] ?? ''),
+      height: String(row['HEIGHT'] ?? ''),
+      weight: String(row['WEIGHT'] ?? ''),
+      jerseyNum: String(row['JERSEY'] ?? ''),
+      position: String(row['POSITION'] ?? ''),
+      teamId: tid,
+      teamName: String(row['TEAM_NAME'] ?? ''),
+      teamAbbrev: String(row['TEAM_ABBREVIATION'] ?? ''),
+      logo: tid ? teamLogo(tid) : '',
+      isActive: String(row['ROSTERSTATUS']) === 'Active',
+    }
+  },
+
+  playerCareerStats: async (playerId: number): Promise<NBAPlayerSeasonStats[]> => {
+    const res = await statsGet('/playercareerstats', { PerMode: 'PerGame', PlayerID: String(playerId) })
+    const rs = findRS(res, 'SeasonTotalsRegularSeason')
+    if (!rs) return []
+    return toObjects(rs).reverse().map(row => ({
+      season: String(row['SEASON_ID']),
+      teamAbbrev: String(row['TEAM_ABBREVIATION']),
+      gamesPlayed: Number(row['GP']),
+      points: Number(row['PTS']),
+      rebounds: Number(row['REB']),
+      assists: Number(row['AST']),
+      steals: Number(row['STL']),
+      blocks: Number(row['BLK']),
+      fgPct: Number(row['FG_PCT']),
+      fg3Pct: Number(row['FG3_PCT']),
+      ftPct: Number(row['FT_PCT']),
+      plusMinus: Number(row['PLUS_MINUS']),
+      minutes: Number(row['MIN']),
+    }))
   },
 
   boxscore: async (gameId: string): Promise<NBABoxscoreResponse> => {
