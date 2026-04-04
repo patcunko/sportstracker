@@ -349,6 +349,16 @@
   box-shadow: 0 0 0 1px var(--accent);
 }
 
+.leaderRowClickable {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.leaderRowClickable:hover {
+  background: var(--surface2);
+  border-radius: 6px;
+}
+
 .leaderCardMore {
   font-size: 11px;
   color: var(--accent);

@@ -342,6 +342,9 @@ export const nhlApi = {
     }
   },
 
+  playerLanding: (playerId: number) =>
+    get<PlayerLandingResponse>(`/player/${playerId}/landing`),
+
   teamRookieLeaders: async (abbrev: string): Promise<NHLRookiePlayer[]> => {
     const season = currentNHLSeason()
     const sort = encodeURIComponent(JSON.stringify([{ property: 'points', direction: 'DESC' }]))
@@ -419,6 +422,59 @@ export const nhlApi = {
       }
     })
   },
+}
+
+export interface PlayerSeasonStats {
+  season: number
+  gameTypeId: number
+  teamName?: { default: string }
+  leagueAbbrev?: string
+  gamesPlayed: number
+  goals?: number
+  assists?: number
+  points?: number
+  plusMinus?: number
+  pim?: number
+  powerPlayGoals?: number
+  shorthandedGoals?: number
+  shots?: number
+  shootingPctg?: number
+  avgTimeOnIce?: string
+  // goalie
+  wins?: number
+  losses?: number
+  otLosses?: number
+  goalsAgainstAverage?: number
+  savePctg?: number
+  shutouts?: number
+}
+
+export interface PlayerLandingResponse {
+  playerId: number
+  firstName: { default: string }
+  lastName: { default: string }
+  fullTeamName?: { default: string }
+  teamAbbrev?: { default: string }
+  teamLogo?: string
+  headshot: string
+  heroImage?: string
+  position: string
+  sweaterNumber?: number
+  birthDate?: string
+  birthCity?: { default: string }
+  birthCountry?: string
+  heightInCm?: number
+  weightInKg?: number
+  isActive: boolean
+  featuredStats?: {
+    season: number
+    regularSeason: { subSeason: Record<string, number> }
+  }
+  careerTotals?: {
+    regularSeason: Record<string, number>
+  }
+  seasonTotals?: PlayerSeasonStats[]
+  currentTeamRoster?: { positionCode: string }
 }
 
 export interface LandingPenalty {

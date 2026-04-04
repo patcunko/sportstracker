@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStandings, useTeamSchedule, useTeamStats, useTeamRookies } from '../hooks/useNHL'
 import type { StandingsTeam, Game } from '../hooks/useNHL'
 import type { ClubSkater, ClubGoalie, NHLRookiePlayer } from '../api/nhl'
+import NHLPlayerModal from '../components/NHLPlayerModal'
 import styles from './NHLTeams.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -123,10 +124,11 @@ function ScheduleSection({ games, abbrev }: { games: Game[]; abbrev: string }) {
 
 const DEFAULT_LIMIT = 8
 
-function LeadersSection({ skaters, goalies, rookies }: {
+function LeadersSection({ skaters, goalies, rookies, onPlayerClick }: {
   skaters: ClubSkater[]
   goalies: ClubGoalie[]
   rookies: NHLRookiePlayer[]
+  onPlayerClick: (id: number) => void
 }) {
   const [tab, setTab] = useState<'skaters' | 'goalies' | 'rookies'>('skaters')
   const [showAll, setShowAll] = useState(false)
@@ -167,7 +169,7 @@ function LeadersSection({ skaters, goalies, rookies }: {
                 </thead>
                 <tbody>
                   {visible.map(p => (
-                    <tr key={p.playerId}>
+                    <tr key={p.playerId} style={{ cursor: 'pointer' }} onClick={() => onPlayerClick(p.playerId)}>
                       <td>
                         <div className={styles.playerCell}>
                           <img src={`https://assets.nhle.com/mugs/nhl/20252026/${p.teamAbbrevs}/${p.playerId}.png`} alt="" className={styles.playerHeadshot} />
@@ -215,7 +217,7 @@ function LeadersSection({ skaters, goalies, rookies }: {
                 </thead>
                 <tbody>
                   {visible.map(g => (
-                    <tr key={g.playerId}>
+                    <tr key={g.playerId} style={{ cursor: 'pointer' }} onClick={() => onPlayerClick(g.playerId)}>
                       <td>
                         <div className={styles.playerCell}>
                           <img src={`https://assets.nhle.com/mugs/nhl/20252026/${g.teamAbbrevs}/${g.playerId}.png`} alt="" className={styles.playerHeadshot} />
@@ -262,7 +264,7 @@ function LeadersSection({ skaters, goalies, rookies }: {
                 </thead>
                 <tbody>
                   {visible.map(p => (
-                    <tr key={p.playerId}>
+                    <tr key={p.playerId} style={{ cursor: 'pointer' }} onClick={() => onPlayerClick(p.playerId)}>
                       <td>
                         <div className={styles.playerCell}>
                           <img src={`https://assets.nhle.com/mugs/nhl/20252026/${p.teamAbbrevs}/${p.playerId}.png`} alt="" className={styles.playerHeadshot} />
@@ -372,6 +374,7 @@ function TeamDetail({ abbrev, standings, onBack }: {
   const { games, loading: schedLoading } = useTeamSchedule(abbrev)
   const { stats, loading: statsLoading } = useTeamStats(abbrev)
   const { rookies, loading: rookiesLoading } = useTeamRookies(abbrev)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null)
   const team = standings.find(t => t.teamAbbrev.default === abbrev)
 
   const isLoading = schedLoading || statsLoading || rookiesLoading
@@ -382,6 +385,7 @@ function TeamDetail({ abbrev, standings, onBack }: {
 
   return (
     <div>
+      {selectedPlayerId && <NHLPlayerModal playerId={selectedPlayerId} onClose={() => setSelectedPlayerId(null)} />}
       <button className={styles.backBtn} onClick={onBack}>
         ‹ All Teams
       </button>
@@ -443,7 +447,7 @@ function TeamDetail({ abbrev, standings, onBack }: {
         <div className={styles.sections}>
           {games.length > 0 && <ScheduleSection games={games} abbrev={abbrev} />}
           {stats && stats.skaters.length > 0 && (
-            <LeadersSection skaters={stats.skaters} goalies={stats.goalies} rookies={rookies} />
+            <LeadersSection skaters={stats.skaters} goalies={stats.goalies} rookies={rookies} onPlayerClick={setSelectedPlayerId} />
           )}
           <DivisionStandingsSection standings={standings} abbrev={abbrev} />
         </div>

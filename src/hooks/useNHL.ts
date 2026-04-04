@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse, type NHLLeadersResponse, type NHLLeaderPlayer, type ClubStatsResponse, type NHLRookiePlayer } from '../api/nhl'
+import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse, type NHLLeadersResponse, type NHLLeaderPlayer, type ClubStatsResponse, type NHLRookiePlayer, type PlayerLandingResponse } from '../api/nhl'
 
 const REFRESH_INTERVAL = 30
 
@@ -300,6 +300,31 @@ export function useTeamStats(abbrev: string | null) {
   useEffect(() => { if (abbrev) void fetchData() }, [fetchData, abbrev])
 
   return { stats, loading, error }
+}
+
+export function usePlayerLanding(playerId: number | null) {
+  const [player, setPlayer] = useState<PlayerLandingResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (!playerId) return
+    setLoading(true)
+    setPlayer(null)
+    try {
+      const data = await nhlApi.playerLanding(playerId)
+      setPlayer(data)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load player')
+    } finally {
+      setLoading(false)
+    }
+  }, [playerId])
+
+  useEffect(() => { if (playerId) void fetchData() }, [fetchData, playerId])
+
+  return { player, loading, error }
 }
 
 export type { Game, StandingsTeam, DaySchedule, NHLLeaderPlayer }
