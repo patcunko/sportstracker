@@ -62,6 +62,7 @@ export interface NBAGame {
   period: number
   clock: string
   tvBroadcaster: string | null
+  arena: string | null
   homeTeam: NBATeamInGame
   awayTeam: NBATeamInGame
 }
@@ -88,6 +89,18 @@ export interface NBAStandingsTeam {
   l10: string
   streak: string
   logo: string
+}
+
+export interface NBALeaderPlayer {
+  playerId: number
+  playerName: string
+  team: string
+  gamesPlayed: number
+  value: number
+}
+
+export interface NBALeadersResponse {
+  [category: string]: NBALeaderPlayer[]
 }
 
 export interface NBABoxscorePlayer {
@@ -150,55 +163,53 @@ export interface NBABoxscoreResponse {
   awayTeam: NBABoxscoreTeam
 }
 
-// ─── scoreboardv3 types & parsing ────────────────────────────────────────────
+// ─── scoreboardV2 parsing ─────────────────────────────────────────────────────
 
-interface V3Team {
-  teamId: number; teamCity: string; teamName: string; teamTricode: string
-  wins: number; losses: number; score: number
-}
+function parseScoreboardV2(res: StatsResponse, date: string): NBAGame[] {
+  const gameHeaders = toObjects(findRS(res, 'GameHeader') ?? { name: '', headers: [], rowSet: [] })
+  const lineScores = toObjects(findRS(res, 'LineScore') ?? { name: '', headers: [], rowSet: [] })
 
-interface V3Game {
-  gameId: string; gameStatus: number; gameStatusText: string
-  period: number; gameClock: string; gameTimeUTC: string
-  homeTeam: V3Team; awayTeam: V3Team
-  broadcasters?: {
-    nationalBroadcasters?: Array<{ broadcasterAbbreviation: string }>
-  }
-}
+  const lineByGame: Record<string, Record<string, unknown>[]> = {}
+  lineScores.forEach(row => {
+    const gid = String(row['GAME_ID'])
+    if (!lineByGame[gid]) lineByGame[gid] = []
+    lineByGame[gid].push(row)
+  })
 
-interface V3Response {
-  scoreboard: { games: V3Game[] }
-}
+  return gameHeaders.map(g => {
+    const gameId = String(g['GAME_ID'])
+    const statusId = Number(g['GAME_STATUS_ID'])
+    const homeId = Number(g['HOME_TEAM_ID'])
+    const awayId = Number(g['VISITOR_TEAM_ID'])
+    const lines = lineByGame[gameId] ?? []
+    const homeLine = lines.find(l => Number(l['TEAM_ID']) === homeId)
+    const awayLine = lines.find(l => Number(l['TEAM_ID']) === awayId)
 
-function parseScoreboardV3(res: V3Response, date: string): NBAGame[] {
-  return res.scoreboard.games.map(g => {
-    const tv = g.broadcasters?.nationalBroadcasters?.[0]?.broadcasterAbbreviation ?? null
-    const clockRaw = g.gameClock ?? ''
-    const clock = clockRaw.startsWith('PT') ? formatClock(clockRaw) : clockRaw.trim()
+    function parseTeam(line: Record<string, unknown> | undefined, teamId: number): NBATeamInGame {
+      return {
+        teamId: Number(line?.['TEAM_ID'] ?? teamId),
+        abbrev: String(line?.['TEAM_ABBREVIATION'] ?? ''),
+        cityName: String(line?.['TEAM_CITY_NAME'] ?? ''),
+        winsLosses: String(line?.['TEAM_WINS_LOSSES'] ?? ''),
+        score: statusId === 1 ? null : (line ? Number(line['PTS']) || 0 : null),
+        logo: teamLogo(Number(line?.['TEAM_ID'] ?? teamId)),
+      }
+    }
+
+    const tvRaw = String(g['NATL_TV_BROADCASTER_ABBREVIATION'] ?? '').trim()
+    const arenaRaw = String(g['ARENA_NAME'] ?? '').trim()
+
     return {
-      gameId: g.gameId,
+      gameId,
       gameDate: date,
-      statusId: g.gameStatus,
-      statusText: g.gameStatusText.trim(),
-      period: g.period,
-      clock,
-      tvBroadcaster: tv,
-      homeTeam: {
-        teamId: g.homeTeam.teamId,
-        abbrev: g.homeTeam.teamTricode,
-        cityName: g.homeTeam.teamCity,
-        winsLosses: `${g.homeTeam.wins}-${g.homeTeam.losses}`,
-        score: g.gameStatus === 1 ? null : g.homeTeam.score,
-        logo: teamLogo(g.homeTeam.teamId),
-      },
-      awayTeam: {
-        teamId: g.awayTeam.teamId,
-        abbrev: g.awayTeam.teamTricode,
-        cityName: g.awayTeam.teamCity,
-        winsLosses: `${g.awayTeam.wins}-${g.awayTeam.losses}`,
-        score: g.gameStatus === 1 ? null : g.awayTeam.score,
-        logo: teamLogo(g.awayTeam.teamId),
-      },
+      statusId,
+      statusText: String(g['GAME_STATUS_TEXT'] ?? '').trim(),
+      period: Number(g['LIVE_PERIOD']) || 0,
+      clock: '',
+      tvBroadcaster: tvRaw || null,
+      arena: arenaRaw || null,
+      homeTeam: parseTeam(homeLine, homeId),
+      awayTeam: parseTeam(awayLine, awayId),
     }
   })
 }
@@ -361,10 +372,8 @@ async function cdnGet<T>(path: string): Promise<T> {
 export const nbaApi = {
   scoreboard: async (date?: string): Promise<NBAGame[]> => {
     const iso = date ?? localDate()
-    const qs = new URLSearchParams({ GameDate: iso, LeagueID: '00' }).toString()
-    const res = await fetch(`${BASE_STATS}/scoreboardv3?${qs}`, { cache: 'no-store' })
-    if (!res.ok) throw new Error(`NBA scoreboard error: ${res.status}`)
-    return parseScoreboardV3(await res.json() as V3Response, iso)
+    const res = await statsGet('/scoreboardV2', { GameDate: iso, LeagueID: '00', DayOffset: '0' })
+    return parseScoreboardV2(res, iso)
   },
 
   standings: async (): Promise<NBAStandingsTeam[]> => {
@@ -374,6 +383,76 @@ export const nbaApi = {
       SeasonType: 'Regular Season',
     })
     return parseStandings(res)
+  },
+
+  rookieLeadersByCategory: async (category: string, limit = 5): Promise<NBALeaderPlayer[]> => {
+    const res = await statsGet('/leaguedashplayerstats', {
+      LeagueID: '00', PerMode: 'PerGame', Season: currentNBASeason(),
+      SeasonType: 'Regular Season', PlayerExperience: 'Rookie',
+      MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
+      LastNGames: '0', Month: '0', OpponentTeamID: '0',
+      PORound: '0', Period: '0', TeamID: '0', TwoWay: '0',
+    })
+    const rs = findRS(res, 'LeagueDashPlayerStats')
+    if (!rs) return []
+    const rows = toObjects(rs).filter(row => Number(row['GP']) >= 10)
+    const sorted = [...rows].sort((a, b) => Number(b[category]) - Number(a[category]))
+    return sorted.slice(0, limit).map(row => ({
+      playerId: Number(row['PLAYER_ID']),
+      playerName: String(row['PLAYER_NAME']),
+      team: String(row['TEAM_ABBREVIATION']),
+      gamesPlayed: Number(row['GP']),
+      value: Number(row[category]),
+    }))
+  },
+
+  leadersByCategory: async (category: string, limit = 5): Promise<NBALeaderPlayer[]> => {
+    const qs = new URLSearchParams({
+      LeagueID: '00', PerMode: 'PerGame', Scope: 'S',
+      Season: currentNBASeason(), SeasonType: 'Regular Season', StatCategory: category,
+    }).toString()
+    const res = await fetch(`${BASE_STATS}/leagueleaders?${qs}`, { cache: 'no-store' })
+    if (!res.ok) throw new Error(`NBA leagueleaders error: ${res.status}`)
+    const data = await res.json() as { resultSet: StatsResultSet }
+    const rs = data.resultSet
+    if (!rs) return []
+    return toObjects(rs).slice(0, limit).map(row => ({
+      playerId: Number(row['PLAYER_ID']),
+      playerName: String(row['PLAYER']),
+      team: String(row['TEAM']),
+      gamesPlayed: Number(row['GP']),
+      value: Number(row[category]),
+    }))
+  },
+
+  leaders: async (limit = 5): Promise<NBALeadersResponse> => {
+    const cats = ['PTS', 'REB', 'AST', 'STL', 'BLK']
+    const results = await Promise.allSettled(
+      cats.map(async cat => {
+        const qs = new URLSearchParams({
+          LeagueID: '00', PerMode: 'PerGame', Scope: 'S',
+          Season: currentNBASeason(), SeasonType: 'Regular Season', StatCategory: cat,
+        }).toString()
+        const res = await fetch(`${BASE_STATS}/leagueleaders?${qs}`, { cache: 'no-store' })
+        if (!res.ok) throw new Error(`NBA leagueleaders ${cat} error: ${res.status}`)
+        const data = await res.json() as { resultSet: StatsResultSet }
+        const rs = data.resultSet
+        if (!rs) return [] as NBALeaderPlayer[]
+        return toObjects(rs).slice(0, limit).map(row => ({
+          playerId: Number(row['PLAYER_ID']),
+          playerName: String(row['PLAYER']),
+          team: String(row['TEAM']),
+          gamesPlayed: Number(row['GP']),
+          value: Number(row[cat]),
+        }))
+      })
+    )
+    const merged: NBALeadersResponse = {}
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') merged[cats[i]] = r.value
+      else console.warn(`NBA leaders category ${cats[i]} failed`)
+    })
+    return merged
   },
 
   boxscore: async (gameId: string): Promise<NBABoxscoreResponse> => {

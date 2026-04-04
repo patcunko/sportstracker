@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { nbaApi, type NBAGame, type NBADay, type NBAStandingsTeam, type NBABoxscoreResponse } from '../api/nba'
+import { nbaApi, type NBAGame, type NBADay, type NBAStandingsTeam, type NBABoxscoreResponse, type NBALeadersResponse, type NBALeaderPlayer } from '../api/nba'
 
 const REFRESH_INTERVAL = 30
 
@@ -160,6 +160,41 @@ export function useNBABoxscore(gameId: string | null) {
   }, [gameId, boxscore, fetchData])
 
   return { boxscore, loading, error }
+}
+
+const ROOKIE_CATS = ['PTS', 'REB', 'AST', 'STL', 'BLK']
+
+export function useNBALeaders() {
+  const [leaders, setLeaders] = useState<NBALeadersResponse | null>(null)
+  const [rookieLeaders, setRookieLeaders] = useState<NBALeadersResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetch = useCallback(async () => {
+    try {
+      const [main, ...rookieResults] = await Promise.all([
+        nbaApi.leaders(),
+        ...ROOKIE_CATS.map(cat => nbaApi.rookieLeadersByCategory(cat)),
+      ])
+      setLeaders(main)
+      const rookieMerged: NBALeadersResponse = {}
+      ROOKIE_CATS.forEach((cat, i) => { rookieMerged[cat] = rookieResults[i] as NBALeaderPlayer[] })
+      setRookieLeaders(rookieMerged)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load leaders')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void fetch() }, [fetch])
+  useEffect(() => {
+    const id = setInterval(() => { void fetch() }, 5 * 60_000)
+    return () => clearInterval(id)
+  }, [fetch])
+
+  return { leaders, rookieLeaders, loading, error }
 }
 
 export type { NBAGame, NBADay, NBAStandingsTeam }

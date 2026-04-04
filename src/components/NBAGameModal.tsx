@@ -26,7 +26,38 @@ function periodLabel(period: number): string {
 }
 
 function PlayerTable({ team }: { team: NBABoxscoreTeam }) {
-  const sorted = [...team.players].sort((a, b) => b.points - a.points || b.assists - a.assists)
+  const starters = team.players.filter(p => p.position !== '')
+  const bench = [...team.players.filter(p => p.position === '')].sort((a, b) => b.points - a.points || b.assists - a.assists)
+
+  function PlayerRow({ p }: { p: NBABoxscorePlayer }) {
+    return (
+      <tr key={p.personId} className={!p.played ? styles.dnp : ''}>
+        <td className={styles.tdNum}>{p.jerseyNum}</td>
+        <td className={styles.tdPlayer}>{p.name}</td>
+        <td>{p.position || ''}</td>
+        {!p.played ? (
+          <td colSpan={11} style={{ textAlign: 'left', paddingLeft: 8 }}>DNP</td>
+        ) : (
+          <>
+            <td>{p.minutesFormatted}</td>
+            <td className={styles.tdPts}>{p.points}</td>
+            <td>{p.rebounds}</td>
+            <td>{p.assists}</td>
+            <td>{p.steals}</td>
+            <td>{p.blocks}</td>
+            <td>{p.turnovers}</td>
+            <td>{p.fgMade}/{p.fgAttempted}</td>
+            <td>{p.fg3Made}/{p.fg3Attempted}</td>
+            <td>{p.ftMade}/{p.ftAttempted}</td>
+            <td className={p.plusMinus > 0 ? styles.plus : p.plusMinus < 0 ? styles.minus : ''}>
+              {fmtPlusMinus(p.plusMinus)}
+            </td>
+          </>
+        )}
+      </tr>
+    )
+  }
+
   return (
     <div className={styles.teamSection}>
       <div className={styles.teamLabel}>{team.abbrev} — {team.teamCity} {team.teamName}</div>
@@ -51,32 +82,13 @@ function PlayerTable({ team }: { team: NBABoxscoreTeam }) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map(p => (
-              <tr key={p.personId} className={!p.played ? styles.dnp : ''}>
-                <td className={styles.tdNum}>{p.jerseyNum}</td>
-                <td className={styles.tdPlayer}>{p.name}</td>
-                <td>{p.position || '–'}</td>
-                {!p.played ? (
-                  <td colSpan={11} style={{ textAlign: 'left', paddingLeft: 8 }}>DNP</td>
-                ) : (
-                  <>
-                    <td>{p.minutesFormatted}</td>
-                    <td className={styles.tdPts}>{p.points}</td>
-                    <td>{p.rebounds}</td>
-                    <td>{p.assists}</td>
-                    <td>{p.steals}</td>
-                    <td>{p.blocks}</td>
-                    <td>{p.turnovers}</td>
-                    <td>{p.fgMade}/{p.fgAttempted}</td>
-                    <td>{p.fg3Made}/{p.fg3Attempted}</td>
-                    <td>{p.ftMade}/{p.ftAttempted}</td>
-                    <td className={p.plusMinus > 0 ? styles.plus : p.plusMinus < 0 ? styles.minus : ''}>
-                      {fmtPlusMinus(p.plusMinus)}
-                    </td>
-                  </>
-                )}
+            {starters.map(p => <PlayerRow key={p.personId} p={p} />)}
+            {bench.length > 0 && (
+              <tr className={styles.benchDivider}>
+                <td colSpan={14}>BENCH</td>
               </tr>
-            ))}
+            )}
+            {bench.map(p => <PlayerRow key={p.personId} p={p} />)}
           </tbody>
         </table>
       </div>

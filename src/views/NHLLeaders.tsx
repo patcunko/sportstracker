@@ -1,17 +1,29 @@
 import { useState } from 'react'
 import { useNHLLeaders } from '../hooks/useNHL'
+import { nhlApi } from '../api/nhl'
 import type { NHLLeaderPlayer } from '../api/nhl'
 import styles from './Standings.module.css'
 
 const SKATER_CATS: { key: string; label: string; fmt?: (v: number) => string }[] = [
+  { key: 'points', label: 'Points' },
   { key: 'goals', label: 'Goals' },
   { key: 'assists', label: 'Assists' },
-  { key: 'points', label: 'Points' },
   { key: 'plusMinus', label: 'Plus / Minus', fmt: v => v > 0 ? `+${v}` : String(v) },
   { key: 'penaltyMins', label: 'Penalty Minutes' },
   { key: 'goalsPp', label: 'Power Play Goals' },
   { key: 'goalsSh', label: 'Shorthanded Goals' },
-  { key: 'toi', label: 'Time on Ice' },
+  { key: 'toi', label: 'Time on Ice (avg)', fmt: v => {
+    const m = Math.floor(v / 60)
+    const s = Math.floor(v % 60)
+    return `${m}:${String(s).padStart(2, '0')}`
+  }},
+]
+
+const ROOKIE_CATS: { key: string; label: string; fmt?: (v: number) => string }[] = [
+  { key: 'points', label: 'Points' },
+  { key: 'goals', label: 'Goals' },
+  { key: 'assists', label: 'Assists' },
+  { key: 'plusMinus', label: 'Plus / Minus', fmt: v => v > 0 ? `+${v}` : String(v) },
 ]
 
 const GOALIE_CATS: { key: string; label: string; fmt?: (v: number) => string }[] = [
@@ -21,9 +33,22 @@ const GOALIE_CATS: { key: string; label: string; fmt?: (v: number) => string }[]
   { key: 'shutouts', label: 'Shutouts' },
 ]
 
-function LeaderCard({ title, players, fmt }: { title: string; players: NHLLeaderPlayer[]; fmt?: (v: number) => string }) {
+type ExpandedModal = {
+  title: string
+  players: NHLLeaderPlayer[] | null
+  fmt?: (v: number) => string
+  loading: boolean
+  error: string | null
+}
+
+function LeaderCard({ title, players, fmt, onClick }: {
+  title: string
+  players: NHLLeaderPlayer[]
+  fmt?: (v: number) => string
+  onClick: () => void
+}) {
   return (
-    <div className={styles.leaderCard}>
+    <div className={`${styles.leaderCard} ${styles.leaderCardClickable}`} onClick={onClick}>
       <div className={styles.leaderCardTitle}>{title}</div>
       {players.map((p, i) => (
         <div key={p.id} className={styles.leaderRow}>
@@ -34,6 +59,37 @@ function LeaderCard({ title, players, fmt }: { title: string; players: NHLLeader
           <span className={styles.leaderVal}>{fmt ? fmt(p.value) : p.value}</span>
         </div>
       ))}
+      <div className={styles.leaderCardMore}>See more →</div>
+    </div>
+  )
+}
+
+function LeaderModal({ modal, onClose }: { modal: ExpandedModal; onClose: () => void }) {
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span className={styles.modalTitle}>{modal.title}</span>
+          <button className={styles.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          {modal.loading && (
+            <div className={styles.center}>
+              <div className={styles.spinner} />
+            </div>
+          )}
+          {modal.error && <div className={styles.error}>⚠ {modal.error}</div>}
+          {modal.players && modal.players.map((p, i) => (
+            <div key={p.id} className={styles.modalLeaderRow}>
+              <span className={styles.leaderRank}>{i + 1}</span>
+              <img src={p.headshot} alt="" className={styles.leaderHeadshot} />
+              <span className={styles.leaderName}>{p.firstName.default} {p.lastName.default}</span>
+              <span className={styles.leaderTeam}>{p.teamAbbrev}</span>
+              <span className={styles.leaderVal}>{modal.fmt ? modal.fmt(p.value) : p.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -41,6 +97,21 @@ function LeaderCard({ title, players, fmt }: { title: string; players: NHLLeader
 export default function NHLLeaders() {
   const { skaterLeaders, goalieLeaders, rookieLeaders, loading, error } = useNHLLeaders()
   const [tab, setTab] = useState<'skaters' | 'goalies' | 'rookies'>('skaters')
+  const [modal, setModal] = useState<ExpandedModal | null>(null)
+
+  async function openModal(type: 'skater' | 'goalie' | 'rookie', cat: { key: string; label: string; fmt?: (v: number) => string }) {
+    setModal({ title: cat.label, players: null, fmt: cat.fmt, loading: true, error: null })
+    try {
+      const players = type === 'skater'
+        ? await nhlApi.skaterLeadersByCategory(cat.key, 20)
+        : type === 'goalie'
+        ? await nhlApi.goalieLeadersByCategory(cat.key, 20)
+        : await nhlApi.rookieLeadersByCategory(cat.key, 20)
+      setModal(m => m ? { ...m, players, loading: false } : null)
+    } catch (e) {
+      setModal(m => m ? { ...m, error: 'Failed to load', loading: false } : null)
+    }
+  }
 
   if (loading) {
     return (
@@ -57,6 +128,8 @@ export default function NHLLeaders() {
 
   return (
     <div className={styles.container}>
+      {modal && <LeaderModal modal={modal} onClose={() => setModal(null)} />}
+
       <div className={styles.tabs}>
         {(['skaters', 'goalies', 'rookies'] as const).map(t => (
           <button
@@ -72,7 +145,13 @@ export default function NHLLeaders() {
       {tab === 'skaters' && skaterLeaders && (
         <div className={styles.leadersGrid}>
           {SKATER_CATS.map(cat => skaterLeaders[cat.key]?.length ? (
-            <LeaderCard key={cat.key} title={cat.label} players={skaterLeaders[cat.key]} fmt={cat.fmt} />
+            <LeaderCard
+              key={cat.key}
+              title={cat.label}
+              players={skaterLeaders[cat.key]}
+              fmt={cat.fmt}
+              onClick={() => openModal('skater', cat)}
+            />
           ) : null)}
         </div>
       )}
@@ -80,52 +159,28 @@ export default function NHLLeaders() {
       {tab === 'goalies' && goalieLeaders && (
         <div className={styles.leadersGrid}>
           {GOALIE_CATS.map(cat => goalieLeaders[cat.key]?.length ? (
-            <LeaderCard key={cat.key} title={cat.label} players={goalieLeaders[cat.key]} fmt={cat.fmt} />
+            <LeaderCard
+              key={cat.key}
+              title={cat.label}
+              players={goalieLeaders[cat.key]}
+              fmt={cat.fmt}
+              onClick={() => openModal('goalie', cat)}
+            />
           ) : null)}
         </div>
       )}
 
       {tab === 'rookies' && rookieLeaders && (
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.rankCol}>#</th>
-                <th className={styles.teamCol}>Player</th>
-                <th>Team</th>
-                <th>Pos</th>
-                <th>GP</th>
-                <th className={styles.bold}>PTS</th>
-                <th>G</th>
-                <th>A</th>
-                <th>+/-</th>
-                <th className={styles.hide}>PPG</th>
-                <th className={styles.hide}>PIM</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rookieLeaders.map((p, i) => (
-                <tr key={p.playerId}>
-                  <td className={styles.rank}>{i + 1}</td>
-                  <td>
-                    <div className={styles.teamCell}>
-                      <img src={`https://assets.nhle.com/mugs/nhl/20252026/${p.teamAbbrevs}/${p.playerId}.png`} alt="" className={styles.leaderHeadshot} />
-                      <span className={styles.abbrev}>{p.skaterFullName}</span>
-                    </div>
-                  </td>
-                  <td>{p.teamAbbrevs}</td>
-                  <td>{p.positionCode}</td>
-                  <td>{p.gamesPlayed}</td>
-                  <td className={styles.pts}>{p.points}</td>
-                  <td className={styles.bold}>{p.goals}</td>
-                  <td>{p.assists}</td>
-                  <td className={p.plusMinus > 0 ? styles.pos : p.plusMinus < 0 ? styles.neg : ''}>{p.plusMinus > 0 ? `+${p.plusMinus}` : p.plusMinus}</td>
-                  <td className={styles.hide}>{p.ppGoals}</td>
-                  <td className={styles.hide}>{p.penaltyMinutes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className={styles.leadersGrid}>
+          {ROOKIE_CATS.map(cat => rookieLeaders[cat.key]?.length ? (
+            <LeaderCard
+              key={cat.key}
+              title={cat.label}
+              players={rookieLeaders[cat.key]}
+              fmt={cat.fmt}
+              onClick={() => openModal('rookie', cat)}
+            />
+          ) : null)}
         </div>
       )}
     </div>

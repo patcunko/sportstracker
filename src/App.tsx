@@ -7,6 +7,7 @@ import News from './views/News'
 import NBAScores from './views/NBAScores'
 import NBASchedule from './views/NBASchedule'
 import NBAStandings from './views/NBAStandings'
+import NBALeaders from './views/NBALeaders'
 import styles from './App.module.css'
 
 type Sport = 'nhl' | 'nba' | 'mlb' | 'nfl'
@@ -19,11 +20,11 @@ const SPORTS: { id: Sport; label: string; icon: string; color: string }[] = [
   { id: 'nfl', label: 'NFL', icon: '🏈', color: '#a855f7' },
 ]
 
-const TABS: { id: Tab; label: string; nhlOnly?: boolean }[] = [
+const TABS: { id: Tab; label: string; sports?: Sport[] }[] = [
   { id: 'scores', label: 'Scores' },
+  { id: 'leaders', label: 'Leaders', sports: ['nhl', 'nba'] },
   { id: 'schedule', label: 'Schedule' },
   { id: 'standings', label: 'Standings' },
-  { id: 'leaders', label: 'Leaders', nhlOnly: true },
   { id: 'news', label: 'News' },
 ]
 
@@ -59,7 +60,11 @@ export default function App() {
                 key={s.id}
                 className={`${styles.sportBtn} ${sport === s.id ? styles.sportActive : ''}`}
                 style={sport === s.id ? { '--sport-color': s.color } as React.CSSProperties : undefined}
-                onClick={() => setSport(s.id)}
+                onClick={() => {
+                  setSport(s.id)
+                  const allowed = TABS.filter(t => !t.sports || t.sports.includes(s.id))
+                  if (!allowed.find(t => t.id === tab)) setTab('scores')
+                }}
               >
                 <span className={styles.sportIcon}>{s.icon}</span>
                 <span className={styles.sportLabel}>{s.label}</span>
@@ -68,7 +73,7 @@ export default function App() {
           </div>
 
           <nav className={styles.nav}>
-            {TABS.filter(t => !t.nhlOnly || sport === 'nhl').map(t => (
+            {TABS.filter(t => !t.sports || t.sports.includes(sport)).map(t => (
               <button
                 key={t.id}
                 className={`${styles.navBtn} ${tab === t.id ? styles.active : ''}`}
@@ -94,6 +99,7 @@ export default function App() {
         {sport === 'nba' && (
           <>
             {tab === 'scores' && <NBAScores />}
+            {tab === 'leaders' && <NBALeaders />}
             {tab === 'schedule' && <NBASchedule />}
             {tab === 'standings' && <NBAStandings />}
             {tab === 'news' && <News sport="nba" />}

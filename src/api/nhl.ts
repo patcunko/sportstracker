@@ -290,13 +290,38 @@ export const nhlApi = {
     return merged
   },
 
-  rookieLeaders: async (limit = 10): Promise<NHLRookieLeadersResponse> => {
+  skaterLeadersByCategory: async (cat: string, limit = 20): Promise<NHLLeaderPlayer[]> => {
     const season = currentNHLSeason()
-    const sort = encodeURIComponent(JSON.stringify([{ property: 'points', direction: 'DESC' }]))
+    const res = await get<NHLLeadersResponse>(`/skater-stats-leaders/${season}/2?categories=${cat}&limit=${limit}`)
+    return res[cat] ?? []
+  },
+
+  goalieLeadersByCategory: async (cat: string, limit = 20): Promise<NHLLeaderPlayer[]> => {
+    const season = currentNHLSeason()
+    const res = await get<NHLLeadersResponse>(`/goalie-stats-leaders/${season}/2?categories=${cat}&limit=${limit}`)
+    return res[cat] ?? []
+  },
+
+  rookieLeadersByCategory: async (sortProp: string, limit = 5): Promise<NHLLeaderPlayer[]> => {
+    const season = currentNHLSeason()
+    const sort = encodeURIComponent(JSON.stringify([{ property: sortProp, direction: 'DESC' }]))
     const cayenne = encodeURIComponent(`gameTypeId=2 and seasonId=${season} and isRookie=1`)
     const res = await fetch(`${BASE_STATS}/skater/summary?isAggregate=false&isGame=false&sort=${sort}&start=0&limit=${limit}&cayenneExp=${cayenne}`, { cache: 'no-store' })
     if (!res.ok) throw new Error(`NHL rookie stats error: ${res.status}`)
-    return res.json() as Promise<NHLRookieLeadersResponse>
+    const data: NHLRookieLeadersResponse = await res.json()
+    return data.data.map(p => {
+      const spaceIdx = p.skaterFullName.indexOf(' ')
+      return {
+        id: p.playerId,
+        firstName: { default: spaceIdx >= 0 ? p.skaterFullName.slice(0, spaceIdx) : p.skaterFullName },
+        lastName: { default: spaceIdx >= 0 ? p.skaterFullName.slice(spaceIdx + 1) : '' },
+        sweaterNumber: 0,
+        headshot: `https://assets.nhle.com/mugs/nhl/20252026/${p.teamAbbrevs}/${p.playerId}.png`,
+        teamAbbrev: p.teamAbbrevs,
+        position: p.positionCode,
+        value: (p as Record<string, number>)[sortProp] ?? 0,
+      }
+    })
   },
 }
 

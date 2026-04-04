@@ -61,7 +61,7 @@ export default function NBAGameCard({ game, onClick }: Props) {
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.venue}>{game.awayTeam.winsLosses} · {game.homeTeam.winsLosses}</span>
+        <span className={styles.venue}>{game.arena ?? ''}</span>
         {game.tvBroadcaster && (
           <span className={styles.tv}>{game.tvBroadcaster}</span>
         )}

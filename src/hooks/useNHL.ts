@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse, type NHLLeadersResponse, type NHLRookiePlayer } from '../api/nhl'
+import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse, type NHLLeadersResponse, type NHLLeaderPlayer } from '../api/nhl'
 
 const REFRESH_INTERVAL = 30
 
@@ -198,18 +198,21 @@ export function useNHLLeaders() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [rookieLeaders, setRookieLeaders] = useState<NHLRookiePlayer[] | null>(null) // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [rookieLeaders, setRookieLeaders] = useState<NHLLeadersResponse | null>(null)
 
   const fetch = useCallback(async () => {
     try {
-      const [skaters, goalies, rookies] = await Promise.all([
+      const rookieCats = ['points', 'goals', 'assists', 'plusMinus']
+      const [skaters, goalies, ...rookieResults] = await Promise.all([
         nhlApi.skaterLeaders(),
         nhlApi.goalieLeaders(),
-        nhlApi.rookieLeaders(),
+        ...rookieCats.map(cat => nhlApi.rookieLeadersByCategory(cat)),
       ])
       setSkaterLeaders(skaters)
       setGoalieLeaders(goalies)
-      setRookieLeaders(rookies.data)
+      const rookieMerged: NHLLeadersResponse = {}
+      rookieCats.forEach((cat, i) => { rookieMerged[cat] = rookieResults[i] as NHLLeaderPlayer[] })
+      setRookieLeaders(rookieMerged)
       setError(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load leaders')
@@ -227,4 +230,4 @@ export function useNHLLeaders() {
   return { skaterLeaders, goalieLeaders, rookieLeaders, loading, error }
 }
 
-export type { Game, StandingsTeam, DaySchedule }
+export type { Game, StandingsTeam, DaySchedule, NHLLeaderPlayer }
