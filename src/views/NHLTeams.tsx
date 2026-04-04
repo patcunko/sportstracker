@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { useStandings } from '../hooks/useNHL'
-import { useTeamSchedule, useTeamStats } from '../hooks/useNHL'
+import { useStandings, useTeamSchedule, useTeamStats, useTeamRookies } from '../hooks/useNHL'
 import type { StandingsTeam, Game } from '../hooks/useNHL'
-import type { ClubSkater, ClubGoalie } from '../api/nhl'
+import type { ClubSkater, ClubGoalie, NHLRookiePlayer } from '../api/nhl'
 import styles from './NHLTeams.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -122,90 +121,176 @@ function ScheduleSection({ games, abbrev }: { games: Game[]; abbrev: string }) {
 
 // ── Leaders Section ────────────────────────────────────────────────────────────
 
-function LeadersSection({ skaters, goalies }: { skaters: ClubSkater[]; goalies: ClubGoalie[] }) {
-  const topSkaters = skaters.slice(0, 8)
-  const topGoalie = goalies[0]
+const DEFAULT_LIMIT = 8
+
+function LeadersSection({ skaters, goalies, rookies }: {
+  skaters: ClubSkater[]
+  goalies: ClubGoalie[]
+  rookies: NHLRookiePlayer[]
+}) {
+  const [tab, setTab] = useState<'skaters' | 'goalies' | 'rookies'>('skaters')
+  const [showAll, setShowAll] = useState(false)
 
   return (
     <div className={styles.section}>
       <div className={styles.sectionTitle}>Team Leaders</div>
-      <div style={{ overflowX: 'auto' }}>
-        <table className={styles.leadersTable}>
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Pos</th>
-              <th>GP</th>
-              <th>G</th>
-              <th>A</th>
-              <th>PTS</th>
-              <th>+/-</th>
-              <th>PPG</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topSkaters.map(p => (
-              <tr key={p.playerId}>
-                <td>
-                  <div className={styles.playerCell}>
-                    <img src={p.headshot} alt="" className={styles.playerHeadshot} />
-                    <span className={styles.playerName}>{p.firstName.default} {p.lastName.default}</span>
-                  </div>
-                </td>
-                <td style={{ textAlign: 'left' }}><span className={styles.playerPos}>{p.position}</span></td>
-                <td>{p.gamesPlayed}</td>
-                <td>{p.goals}</td>
-                <td>{p.assists}</td>
-                <td className={styles.bold}>{p.points}</td>
-                <td style={{ color: p.plusMinus > 0 ? 'var(--win)' : p.plusMinus < 0 ? 'var(--loss)' : undefined }}>
-                  {p.plusMinus > 0 ? `+${p.plusMinus}` : p.plusMinus}
-                </td>
-                <td>{p.powerPlayGoals}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <div className={styles.leadersTabs}>
+        {(['skaters', 'goalies', 'rookies'] as const).map(t => (
+          <button
+            key={t}
+            className={`${styles.leadersTab} ${tab === t ? styles.leadersTabActive : ''}`}
+            onClick={() => { setTab(t); setShowAll(false) }}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
       </div>
 
-      {topGoalie && (
-        <>
-          <div style={{ borderTop: '1px solid var(--border)', overflowX: 'auto' }}>
-            <table className={styles.leadersTable}>
-              <thead>
-                <tr>
-                  <th>Goalie</th>
-                  <th>GP</th>
-                  <th>W</th>
-                  <th>L</th>
-                  <th>OTL</th>
-                  <th>GAA</th>
-                  <th>SV%</th>
-                  <th>SO</th>
-                </tr>
-              </thead>
-              <tbody>
-                {goalies.slice(0, 3).map(g => (
-                  <tr key={g.playerId}>
-                    <td>
-                      <div className={styles.playerCell}>
-                        <img src={g.headshot} alt="" className={styles.playerHeadshot} />
-                        <span className={styles.playerName}>{g.firstName.default} {g.lastName.default}</span>
-                      </div>
-                    </td>
-                    <td>{g.gamesPlayed}</td>
-                    <td className={styles.bold}>{g.wins}</td>
-                    <td>{g.losses}</td>
-                    <td>{g.otLosses}</td>
-                    <td>{g.goalsAgainstAverage.toFixed(2)}</td>
-                    <td>{g.savePctg.toFixed(3).replace(/^0/, '')}</td>
-                    <td>{g.shutouts}</td>
+      <div style={{ overflowX: 'auto' }}>
+        {tab === 'skaters' && (() => {
+          const visible = showAll ? skaters : skaters.slice(0, DEFAULT_LIMIT)
+          return (
+            <>
+              <table className={styles.leadersTable}>
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Pos</th>
+                    <th>GP</th>
+                    <th>G</th>
+                    <th>A</th>
+                    <th>PTS</th>
+                    <th>+/-</th>
+                    <th>PPG</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                </thead>
+                <tbody>
+                  {visible.map(p => (
+                    <tr key={p.playerId}>
+                      <td>
+                        <div className={styles.playerCell}>
+                          <img src={`https://assets.nhle.com/mugs/nhl/20252026/${p.teamAbbrevs}/${p.playerId}.png`} alt="" className={styles.playerHeadshot} />
+                          <span className={styles.playerName}>{p.skaterFullName}</span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'left' }}><span className={styles.playerPos}>{p.positionCode}</span></td>
+                      <td>{p.gamesPlayed}</td>
+                      <td>{p.goals}</td>
+                      <td>{p.assists}</td>
+                      <td className={styles.bold}>{p.points}</td>
+                      <td style={{ color: p.plusMinus > 0 ? 'var(--win)' : p.plusMinus < 0 ? 'var(--loss)' : undefined }}>
+                        {p.plusMinus > 0 ? `+${p.plusMinus}` : p.plusMinus}
+                      </td>
+                      <td>{p.ppGoals}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {skaters.length > DEFAULT_LIMIT && (
+                <button className={styles.viewAllBtn} onClick={() => setShowAll(v => !v)}>
+                  {showAll ? 'Show less' : `View all ${skaters.length} skaters`}
+                </button>
+              )}
+            </>
+          )
+        })()}
+
+        {tab === 'goalies' && (() => {
+          const visible = showAll ? goalies : goalies.slice(0, DEFAULT_LIMIT)
+          return (
+            <>
+              <table className={styles.leadersTable}>
+                <thead>
+                  <tr>
+                    <th>Goalie</th>
+                    <th>GP</th>
+                    <th>W</th>
+                    <th>L</th>
+                    <th>OTL</th>
+                    <th>GAA</th>
+                    <th>SV%</th>
+                    <th>SO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map(g => (
+                    <tr key={g.playerId}>
+                      <td>
+                        <div className={styles.playerCell}>
+                          <img src={`https://assets.nhle.com/mugs/nhl/20252026/${g.teamAbbrevs}/${g.playerId}.png`} alt="" className={styles.playerHeadshot} />
+                          <span className={styles.playerName}>{g.goalieFullName}</span>
+                        </div>
+                      </td>
+                      <td>{g.gamesPlayed}</td>
+                      <td className={styles.bold}>{g.wins}</td>
+                      <td>{g.losses}</td>
+                      <td>{g.otLosses}</td>
+                      <td>{g.goalsAgainstAverage.toFixed(2)}</td>
+                      <td>{g.savePct.toFixed(3).replace(/^0/, '')}</td>
+                      <td>{g.shutouts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {goalies.length > DEFAULT_LIMIT && (
+                <button className={styles.viewAllBtn} onClick={() => setShowAll(v => !v)}>
+                  {showAll ? 'Show less' : `View all ${goalies.length} goalies`}
+                </button>
+              )}
+            </>
+          )
+        })()}
+
+        {tab === 'rookies' && (() => {
+          if (rookies.length === 0) return <p style={{ padding: '20px 16px', color: 'var(--text-muted)', fontSize: 13 }}>No rookies on this team.</p>
+          const visible = showAll ? rookies : rookies.slice(0, DEFAULT_LIMIT)
+          return (
+            <>
+              <table className={styles.leadersTable}>
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Pos</th>
+                    <th>GP</th>
+                    <th>G</th>
+                    <th>A</th>
+                    <th>PTS</th>
+                    <th>+/-</th>
+                    <th>PPG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map(p => (
+                    <tr key={p.playerId}>
+                      <td>
+                        <div className={styles.playerCell}>
+                          <img src={`https://assets.nhle.com/mugs/nhl/20252026/${p.teamAbbrevs}/${p.playerId}.png`} alt="" className={styles.playerHeadshot} />
+                          <span className={styles.playerName}>{p.skaterFullName}</span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'left' }}><span className={styles.playerPos}>{p.positionCode}</span></td>
+                      <td>{p.gamesPlayed}</td>
+                      <td>{p.goals}</td>
+                      <td>{p.assists}</td>
+                      <td className={styles.bold}>{p.points}</td>
+                      <td style={{ color: p.plusMinus > 0 ? 'var(--win)' : p.plusMinus < 0 ? 'var(--loss)' : undefined }}>
+                        {p.plusMinus > 0 ? `+${p.plusMinus}` : p.plusMinus}
+                      </td>
+                      <td>{p.ppGoals}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {rookies.length > DEFAULT_LIMIT && (
+                <button className={styles.viewAllBtn} onClick={() => setShowAll(v => !v)}>
+                  {showAll ? 'Show less' : `View all ${rookies.length} rookies`}
+                </button>
+              )}
+            </>
+          )
+        })()}
+      </div>
     </div>
   )
 }
@@ -286,9 +371,10 @@ function TeamDetail({ abbrev, standings, onBack }: {
 }) {
   const { games, loading: schedLoading } = useTeamSchedule(abbrev)
   const { stats, loading: statsLoading } = useTeamStats(abbrev)
+  const { rookies, loading: rookiesLoading } = useTeamRookies(abbrev)
   const team = standings.find(t => t.teamAbbrev.default === abbrev)
 
-  const isLoading = schedLoading || statsLoading
+  const isLoading = schedLoading || statsLoading || rookiesLoading
 
   if (!team) return null
 
@@ -357,7 +443,7 @@ function TeamDetail({ abbrev, standings, onBack }: {
         <div className={styles.sections}>
           {games.length > 0 && <ScheduleSection games={games} abbrev={abbrev} />}
           {stats && stats.skaters.length > 0 && (
-            <LeadersSection skaters={stats.skaters} goalies={stats.goalies} />
+            <LeadersSection skaters={stats.skaters} goalies={stats.goalies} rookies={rookies} />
           )}
           <DivisionStandingsSection standings={standings} abbrev={abbrev} />
         </div>

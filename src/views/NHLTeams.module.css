@@ -279,6 +279,36 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* ── Leaders tabs ──────────────────────────────── */
+
+.leadersTabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.leadersTab {
+  padding: 6px 14px;
+  border-radius: 7px 7px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  transition: color 0.15s, background 0.15s;
+}
+
+.leadersTab:hover { color: var(--text); }
+
+.leadersTabActive {
+  color: var(--accent);
+  font-weight: 700;
+  background: rgba(14, 165, 233, 0.08);
+}
+
 /* ── Leaders mini ──────────────────────────────── */
 
 .leadersTable {
@@ -407,6 +437,27 @@
   font-weight: 800;
   color: var(--text);
   font-size: 14px;
+}
+
+/* ── View all button ───────────────────────────── */
+
+.viewAllBtn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.viewAllBtn:hover {
+  background: var(--surface2);
 }
 
 /* ── Loading / empty ───────────────────────────── */

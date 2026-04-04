@@ -248,32 +248,30 @@ export interface NHLRookieLeadersResponse {
 
 export interface ClubSkater {
   playerId: number
-  headshot: string
-  firstName: { default: string }
-  lastName: { default: string }
-  position: string
+  skaterFullName: string
+  teamAbbrevs: string
+  positionCode: string
   gamesPlayed: number
   goals: number
   assists: number
   points: number
   plusMinus: number
-  powerPlayGoals: number
+  ppGoals: number
   shots: number
-  shootingPctg: number
-  avgTimeOnIce: string
+  shootingPct: number
+  timeOnIcePerGame: number
 }
 
 export interface ClubGoalie {
+  goalieFullName: string
   playerId: number
-  headshot: string
-  firstName: { default: string }
-  lastName: { default: string }
+  teamAbbrevs: string
   gamesPlayed: number
   wins: number
   losses: number
   otLosses: number
   goalsAgainstAverage: number
-  savePctg: number
+  savePct: number
   shutouts: number
 }
 
@@ -295,8 +293,64 @@ export const nhlApi = {
   teamSchedule: (abbrev: string) =>
     get<{ games: Game[] }>(`/club-schedule-season/${abbrev}/now`),
 
-  teamStats: (abbrev: string) =>
-    get<ClubStatsResponse>(`/club-stats/${abbrev}/now`),
+  teamStats: async (abbrev: string): Promise<ClubStatsResponse> => {
+    const season = currentNHLSeason()
+    const cayenneSkater = encodeURIComponent(`gameTypeId=2 and seasonId=${season} and teamAbbrevs="${abbrev}"`)
+    const cayenneGoalie = encodeURIComponent(`gameTypeId=2 and seasonId=${season} and teamAbbrevs="${abbrev}"`)
+    const skaterSort = encodeURIComponent(JSON.stringify([{ property: 'points', direction: 'DESC' }]))
+    const goalieSort = encodeURIComponent(JSON.stringify([{ property: 'wins', direction: 'DESC' }]))
+
+    const [skaterRes, goalieRes] = await Promise.all([
+      fetch(`${BASE_STATS}/skater/summary?isAggregate=false&isGame=false&sort=${skaterSort}&start=0&limit=30&cayenneExp=${cayenneSkater}`, { cache: 'no-store' }),
+      fetch(`${BASE_STATS}/goalie/summary?isAggregate=false&isGame=false&sort=${goalieSort}&start=0&limit=10&cayenneExp=${cayenneGoalie}`, { cache: 'no-store' }),
+    ])
+
+    if (!skaterRes.ok) throw new Error(`NHL team skater stats error: ${skaterRes.status}`)
+    if (!goalieRes.ok) throw new Error(`NHL team goalie stats error: ${goalieRes.status}`)
+
+    const skaterData: { data: Record<string, unknown>[] } = await skaterRes.json()
+    const goalieData: { data: Record<string, unknown>[] } = await goalieRes.json()
+
+    return {
+      skaters: skaterData.data.map(r => ({
+        playerId: Number(r['playerId']),
+        skaterFullName: String(r['skaterFullName']),
+        teamAbbrevs: String(r['teamAbbrevs']),
+        positionCode: String(r['positionCode']),
+        gamesPlayed: Number(r['gamesPlayed']),
+        goals: Number(r['goals']),
+        assists: Number(r['assists']),
+        points: Number(r['points']),
+        plusMinus: Number(r['plusMinus']),
+        ppGoals: Number(r['ppGoals']),
+        shots: Number(r['shots']),
+        shootingPct: Number(r['shootingPct']),
+        timeOnIcePerGame: Number(r['timeOnIcePerGame']),
+      })),
+      goalies: goalieData.data.map(r => ({
+        playerId: Number(r['goalieId'] ?? r['playerId']),
+        goalieFullName: String(r['goalieFullName']),
+        teamAbbrevs: String(r['teamAbbrevs']),
+        gamesPlayed: Number(r['gamesPlayed']),
+        wins: Number(r['wins']),
+        losses: Number(r['losses']),
+        otLosses: Number(r['otLosses']),
+        goalsAgainstAverage: Number(r['goalsAgainstAverage']),
+        savePct: Number(r['savePct']),
+        shutouts: Number(r['shutouts']),
+      })),
+    }
+  },
+
+  teamRookieLeaders: async (abbrev: string): Promise<NHLRookiePlayer[]> => {
+    const season = currentNHLSeason()
+    const sort = encodeURIComponent(JSON.stringify([{ property: 'points', direction: 'DESC' }]))
+    const cayenne = encodeURIComponent(`gameTypeId=2 and seasonId=${season} and isRookie=1 and teamAbbrevs="${abbrev}"`)
+    const res = await fetch(`${BASE_STATS}/skater/summary?isAggregate=false&isGame=false&sort=${sort}&start=0&limit=20&cayenneExp=${cayenne}`, { cache: 'no-store' })
+    if (!res.ok) throw new Error(`NHL team rookie stats error: ${res.status}`)
+    const data: NHLRookieLeadersResponse = await res.json()
+    return data.data
+  },
 
   boxscore: (gameId: number) =>
     get<BoxscoreResponse>(`/gamecenter/${gameId}/boxscore`),
