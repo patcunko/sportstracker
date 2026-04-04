@@ -7,7 +7,6 @@ import styles from './NHLTeams.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const DIVISIONS = ['Atlantic', 'Metropolitan', 'Central', 'Pacific']
 
 function formatGameDate(utc: string): string {
   const d = new Date(utc)
@@ -50,28 +49,18 @@ function TeamCard({ team, onClick }: { team: StandingsTeam; onClick: () => void 
 }
 
 function TeamGrid({ standings, onSelect }: { standings: StandingsTeam[]; onSelect: (abbrev: string) => void }) {
-  const byDivision = DIVISIONS.map(div => ({
-    name: div,
-    teams: standings
-      .filter(t => t.divisionName === div)
-      .sort((a, b) => b.points - a.points || b.wins - a.wins),
-  }))
+  const sorted = [...standings].sort((a, b) =>
+    a.teamName.default.localeCompare(b.teamName.default)
+  )
 
   return (
-    <div className={styles.divisionsGrid}>
-      {byDivision.map(div => (
-        <div key={div.name} className={styles.division}>
-          <div className={styles.divisionTitle}>{div.name} Division</div>
-          <div className={styles.teamsCardGrid}>
-            {div.teams.map(team => (
-              <TeamCard
-                key={team.teamAbbrev.default}
-                team={team}
-                onClick={() => onSelect(team.teamAbbrev.default)}
-              />
-            ))}
-          </div>
-        </div>
+    <div className={styles.teamsCardGrid}>
+      {sorted.map(team => (
+        <TeamCard
+          key={team.teamAbbrev.default}
+          team={team}
+          onClick={() => onSelect(team.teamAbbrev.default)}
+        />
       ))}
     </div>
   )

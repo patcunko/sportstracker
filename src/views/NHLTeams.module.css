@@ -8,47 +8,20 @@
 
 /* ── Team Grid ─────────────────────────────────── */
 
-.divisionsGrid {
-  display: block;
-  width: 100%;
-}
-
-.division {
-  display: block;
-  width: 100%;
-  margin-bottom: 32px;
-}
-
-.division:last-child {
-  margin-bottom: 0;
-}
-
-.divisionTitle {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--accent);
-  padding-bottom: 8px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
 .teamsCardGrid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
   width: 100%;
   box-sizing: border-box;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 800px) {
   .teamsCardGrid { grid-template-columns: repeat(4, 1fr); }
 }
 
-@media (max-width: 400px) {
-  .teamsCardGrid { gap: 6px; }
+@media (max-width: 480px) {
+  .teamsCardGrid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
 }
 
 .teamCard {
@@ -56,11 +29,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px 8px 12px;
+  gap: 10px;
+  padding: 24px 12px 18px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   aspect-ratio: 1;
@@ -73,8 +46,8 @@
 }
 
 .teamLogo {
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -88,7 +61,7 @@
 }
 
 .teamName {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
   text-align: center;
@@ -99,12 +72,12 @@
 }
 
 .teamMeta {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
 .teamStreak {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
 }
