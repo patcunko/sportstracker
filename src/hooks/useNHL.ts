@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse, type NHLLeadersResponse, type NHLLeaderPlayer } from '../api/nhl'
+import { nhlApi, type Game, type StandingsTeam, type DaySchedule, type BoxscoreResponse, type LandingResponse, type NHLLeadersResponse, type NHLLeaderPlayer, type ClubStatsResponse } from '../api/nhl'
 
 const REFRESH_INTERVAL = 30
 
@@ -228,6 +228,54 @@ export function useNHLLeaders() {
   }, [fetch])
 
   return { skaterLeaders, goalieLeaders, rookieLeaders, loading, error }
+}
+
+export function useTeamSchedule(abbrev: string | null) {
+  const [games, setGames] = useState<Game[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (!abbrev) return
+    setLoading(true)
+    try {
+      const data = await nhlApi.teamSchedule(abbrev)
+      setGames(data.games ?? [])
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load schedule')
+    } finally {
+      setLoading(false)
+    }
+  }, [abbrev])
+
+  useEffect(() => { if (abbrev) void fetchData() }, [fetchData, abbrev])
+
+  return { games, loading, error }
+}
+
+export function useTeamStats(abbrev: string | null) {
+  const [stats, setStats] = useState<ClubStatsResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (!abbrev) return
+    setLoading(true)
+    try {
+      const data = await nhlApi.teamStats(abbrev)
+      setStats(data)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load stats')
+    } finally {
+      setLoading(false)
+    }
+  }, [abbrev])
+
+  useEffect(() => { if (abbrev) void fetchData() }, [fetchData, abbrev])
+
+  return { stats, loading, error }
 }
 
 export type { Game, StandingsTeam, DaySchedule, NHLLeaderPlayer }

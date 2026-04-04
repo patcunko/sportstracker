@@ -246,6 +246,42 @@ export interface NHLRookieLeadersResponse {
   total: number
 }
 
+export interface ClubSkater {
+  playerId: number
+  headshot: string
+  firstName: { default: string }
+  lastName: { default: string }
+  position: string
+  gamesPlayed: number
+  goals: number
+  assists: number
+  points: number
+  plusMinus: number
+  powerPlayGoals: number
+  shots: number
+  shootingPctg: number
+  avgTimeOnIce: string
+}
+
+export interface ClubGoalie {
+  playerId: number
+  headshot: string
+  firstName: { default: string }
+  lastName: { default: string }
+  gamesPlayed: number
+  wins: number
+  losses: number
+  otLosses: number
+  goalsAgainstAverage: number
+  savePctg: number
+  shutouts: number
+}
+
+export interface ClubStatsResponse {
+  skaters: ClubSkater[]
+  goalies: ClubGoalie[]
+}
+
 export const nhlApi = {
   scoreboard: (date?: string) =>
     get<ScoreboardResponse>(`/score/${date ?? today()}`),
@@ -255,6 +291,12 @@ export const nhlApi = {
   scheduleByDate: (date: string) => get<ScheduleResponse>(`/schedule/${date}`),
 
   standings: () => get<StandingsResponse>(`/standings/${today()}`),
+
+  teamSchedule: (abbrev: string) =>
+    get<{ games: Game[] }>(`/club-schedule-season/${abbrev}/now`),
+
+  teamStats: (abbrev: string) =>
+    get<ClubStatsResponse>(`/club-stats/${abbrev}/now`),
 
   boxscore: (gameId: number) =>
     get<BoxscoreResponse>(`/gamecenter/${gameId}/boxscore`),
@@ -319,7 +361,7 @@ export const nhlApi = {
         headshot: `https://assets.nhle.com/mugs/nhl/20252026/${p.teamAbbrevs}/${p.playerId}.png`,
         teamAbbrev: p.teamAbbrevs,
         position: p.positionCode,
-        value: (p as Record<string, number>)[sortProp] ?? 0,
+        value: (p as unknown as Record<string, number>)[sortProp] ?? 0,
       }
     })
   },

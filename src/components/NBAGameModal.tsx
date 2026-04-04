@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNBABoxscore } from '../hooks/useNBA'
-import type { NBABoxscoreTeam } from '../api/nba'
+import type { NBABoxscoreTeam, NBABoxscorePlayer } from '../api/nba'
 import styles from './NBAGameModal.module.css'
 
 interface Props {
